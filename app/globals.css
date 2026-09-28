@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+/*
+ * HoABL brand: black background, dark-purple gradient, white text, gold
+ * buttons. One dark theme; token names are historical (verd is now the purple
+ * accent), so every screen picks the palette up from here.
+ */
+:root {
+  --ink: #f7f4fb;
+  --ink-soft: #b1a8c1;
+  --paper: #0a0810;
+  --card: #16101f;
+  --line: #2c2338;
+  --verd: #8b63ff;
+  --verd-soft: #251a3d;
+  --gold: #d8a949;
+  --gold-soft: #33280f;
+  --site: #07060b;
+  --site-ink: #f7f4fb;
+  --danger: #ff7a6b;
+
+  --brand-gradient: radial-gradient(130% 60% at 50% 0%, #3a1c6b 0%, #1b1030 42%, #0a0810 78%);
+
+  --app-max: 428px;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-verd: var(--verd);
+  --color-verd-soft: var(--verd-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-site: var(--site);
+  --color-site-ink: var(--site-ink);
+  --color-danger: var(--danger);
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+/*
+ * Gold is a gradient, not a flat fill: light champagne to brand gold to
+ * bronze. Unlayered, so it sits on top of Tailwind's bg-gold colour and every
+ * gold button picks it up. (Tinted variants such as bg-gold/90 stay flat.)
+ */
+.bg-gold {
+  background-image: linear-gradient(135deg, #f6dc98 0%, #e2b85c 32%, #d8a949 55%, #a8761a 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+body {
+  margin: 0;
+  background: #050407;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular figures on every number (BUILD.md §9). */
+.app-shell {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The app is mobile-only. On a phone the shell fills the screen; on anything
+ * wider it becomes a centred phone-sized frame, so the desktop demo shows
+ * exactly what the customer sees.
+ *
+ * The shell is the containing block for position: fixed children (transform),
+ * and only .app-scroll scrolls, so bottom bars pinned with fixed stay inside
+ * the frame.
+ */
+.app-shell {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-max);
+  height: 100dvh;
+  margin: 0 auto;
+  background: var(--brand-gradient), var(--paper);
+  overflow: hidden;
+  transform: translateZ(0);
+  display: flex;
+  flex-direction: column;
+}
+
+.app-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.app-shell--wide {
+  max-width: 1280px;
+}
+
+@media (min-width: 500px) {
+  body {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+  }
+
+  .app-shell {
+    height: min(926px, calc(100dvh - 48px));
+    border-radius: 36px;
+    box-shadow:
+      0 0 0 10px #0b161b,
+      0 30px 80px rgb(0 0 0 / 0.45);
+  }
+
+  .app-shell--wide {
+    width: calc(100vw - 48px);
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgb(0 0 0 / 0.45);
+  }
+}
+
+/* ---------------------------------------------------------------- avatar */
+
+@keyframes talk {
+  0%, 100% { transform: scaleY(0.25); }
+  25% { transform: scaleY(1); }
+  50% { transform: scaleY(0.5); }
+  75% { transform: scaleY(0.85); }
+}
+@keyframes blink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+@keyframes breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes bar {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.svg-mouth { transform-box: fill-box; transform-origin: center; transform: scaleY(0.25); }
+.speaking .svg-mouth { animation: talk 0.32s ease-in-out infinite; }
+.svg-eye { transform-box: fill-box; transform-origin: center; animation: blink 4.2s infinite; }
+.svg-body { animation: breathe 4s ease-in-out infinite; }
+.pulse-ring { animation: pulse-ring 1.4s ease-out infinite; }
+.wave-bar { transform-origin: bottom; animation: bar 0.9s ease-in-out infinite; }
+
+/* Landing slideshow: a slow push-in on the visible photo. */
+@keyframes slide-zoom {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.12); }
+}
+@keyframes caption-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.slide-zoom { animation: slide-zoom 9s ease-out forwards; }
+.slide-caption { animation: caption-in 0.8s ease-out 0.6s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .speaking .svg-mouth, .svg-eye, .svg-body, .pulse-ring, .wave-bar, .slide-zoom, .slide-caption { animation: none; }
+}
