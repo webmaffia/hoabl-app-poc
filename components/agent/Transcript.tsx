@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { Turn } from "@/lib/store";
 import { VIEW_LABEL, type View } from "@/lib/journey";
-import { ScreenIcon } from "@/components/icons";
+import { CheckIcon, ScreenIcon } from "@/components/icons";
 
 export function Transcript({ turns, busy, error, showPills, onRetry }: { turns: Turn[]; busy: boolean; error: string | null; showPills: boolean; onRetry: () => void }) {
   const end = useRef<HTMLDivElement>(null);
@@ -38,6 +38,26 @@ export function Transcript({ turns, busy, error, showPills, onRetry }: { turns: 
             <div key={i} className="mx-auto flex items-center gap-2 rounded-full bg-verd-soft px-3 py-1 text-[12px] font-semibold text-verd">
               <span className="h-1.5 w-1.5 rounded-full bg-verd" />
               {t.label}
+            </div>
+          );
+        if (t.kind === "handoff")
+          return (
+            <div key={i} className="mr-auto max-w-[88%] rounded-2xl border border-line bg-card p-3.5">
+              <p className="text-[12.5px] leading-snug text-ink-soft">
+                We&rsquo;ll connect you with a sales advisor who already has your complete context.
+              </p>
+              <div className="mt-2.5 flex flex-col gap-1.5 border-t border-line pt-2.5">
+                {t.items.map((item) => (
+                  <div key={item.label} className={`flex items-center gap-2 text-[13px] ${item.done ? "text-ink" : "text-ink-soft/60"}`}>
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${item.done ? "bg-verd text-white" : "border border-line"}`}
+                    >
+                      {item.done && <CheckIcon className="h-2.5 w-2.5" />}
+                    </span>
+                    {item.label}
+                  </div>
+                ))}
+              </div>
             </div>
           );
         if (!showPills) return null;

@@ -249,6 +249,12 @@ export default function Console() {
                       ▣ screen → {VIEW_LABEL[t.view as View] ?? t.view}
                     </p>
                   );
+                if (t.kind === "handoff")
+                  return (
+                    <p key={i} className="text-[12px] font-semibold text-verd">
+                      ☎ handoff → {t.items.filter((it) => it.done).map((it) => it.label).join(", ") || "no context yet"}
+                    </p>
+                  );
                 return null;
               })}
               {snap.busy && <p className="animate-pulse text-[12px] text-ink-soft">Land Advisor is working…</p>}

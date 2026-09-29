@@ -22,13 +22,23 @@ export interface ToolPill {
   pill: string | null; // null while running
 }
 
+export interface HandoffItem {
+  label: string;
+  done: boolean;
+}
+
 export type Turn =
   | { kind: "user"; text: string; interrupted?: boolean }
   | { kind: "agent"; text: string; chips: string[] }
   | { kind: "tool"; tool: ToolPill }
   | { kind: "show"; view: string; id: string | null }
   /** Something that happened in the app (payment, KYC), shown as a system line. */
-  | { kind: "event"; label: string };
+  | { kind: "event"; label: string }
+  /** Shown when the customer asks for a human advisor: what will carry over to them. */
+  | { kind: "handoff"; items: HandoffItem[] };
+
+/** Speaking to a human advisor asks for this exact line so the request is unambiguous to the model. */
+export const HUMAN_REQUEST = "I'd like to speak to a human advisor, please.";
 
 export interface GuardHit {
   at: number;
@@ -136,6 +146,8 @@ interface SessionState {
   send: (text: string | null) => Promise<void>;
   /** Tells the advisor something happened in the app (payment, KYC) and lets it respond. */
   sendEvent: (label: string, detail: string, intent: Intent) => Promise<void>;
+  /** Shows what carries over to a human advisor, then asks the Land Advisor to hand off. */
+  requestHuman: () => Promise<void>;
   /** Cancels the in-flight turn (barge-in). */
   abort: () => void;
   setScreen: (screen: Screen | null) => void;
@@ -405,6 +417,19 @@ export const useSession = create<SessionState>()(
         sendEvent: (label, detail, intent) => {
           set((s) => ({ intent: advanceIntent(s.intent, intent) }));
           return runTurn(`[App event] ${detail}`, { kind: "event", label });
+        },
+
+        requestHuman: () => {
+          const s = get();
+          const items: HandoffItem[] = [
+            { label: "Buyer profile", done: Boolean(s.profile.purpose || s.profile.budget_max) },
+            { label: "Project viewed", done: s.introSeen.length > 0 || s.lastSearch.length > 0 },
+            { label: "Plots viewed & shortlisted", done: Boolean(s.selectedPlot) },
+            { label: "KYC verified", done: Boolean(s.kyc) },
+            { label: "Token payment completed", done: s.booking?.status === "paid" },
+          ];
+          set((st) => ({ turns: [...st.turns, { kind: "handoff", items }] }));
+          return get().send(HUMAN_REQUEST);
         },
 
         endFinding: () => set({ findingSince: null }),

@@ -28,7 +28,6 @@ import { Logo } from "@/components/Logo";
 import { screenCue } from "@/lib/avatar/screen-lines";
 import { FindingOverlay } from "@/components/journey/FindingOverlay";
 
-const HUMAN_REQUEST = "I'd like to speak to a human advisor, please.";
 // Next steps on the property page: the plot map first, then the questions
 // buyers usually ask about a project.
 const SHOW_PLOTS = "Take me to the plots";
@@ -82,7 +81,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   // sessionStorage only exists in the browser, so render after hydration.
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  const { turns, busy, error, profile, send, screen, screenSeq, selectedPlot, overrides } = useSession();
+  const { turns, busy, error, profile, send, requestHuman, screen, screenSeq, selectedPlot, overrides } = useSession();
   const { mode, note, liveEnabled } = useAvatar();
   const [showPills, setShowPills] = useState(readPills);
   const greeted = useRef(false);
@@ -208,7 +207,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
 
   const humanRequest = () => {
     avatar.bargeIn();
-    void send(HUMAN_REQUEST);
+    void requestHuman();
   };
   // Minimise: back to the app, on the screen the customer last had open, else
   // the last one the advisor showed, else recommendations.

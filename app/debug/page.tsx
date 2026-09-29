@@ -51,6 +51,12 @@ export default function AgentPage() {
           if (!showPills) return null;
           if (t.kind === "tool") return <p key={i} style={{ color: "#666" }}>⚙ {t.tool.pill ?? `${t.tool.name}…`}</p>;
           if (t.kind === "event") return <p key={i} style={{ color: "#125E52" }}>● {t.label}</p>;
+          if (t.kind === "handoff")
+            return (
+              <p key={i} style={{ color: "#125E52" }}>
+                ☎ handoff → {t.items.filter((it) => it.done).map((it) => it.label).join(", ") || "no context yet"}
+              </p>
+            );
           return <p key={i} style={{ color: "#125E52" }}>▣ screen → {t.view}{t.id ? ` (${t.id})` : ""}</p>;
         })}
         {busy && <p style={{ color: "#666" }}>…</p>}

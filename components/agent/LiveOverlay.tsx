@@ -186,6 +186,19 @@ function Comment({ turn, initial, showPills }: { turn: Turn; initial: string; sh
     return (
       <div className="ml-9 w-fit rounded-full bg-[#8b63ff]/80 px-2.5 py-1 text-[11.5px] font-semibold text-white backdrop-blur">✓ {turn.label}</div>
     );
+  if (turn.kind === "handoff")
+    return (
+      <div className={`ml-9 max-w-[85%] rounded-xl bg-black/45 p-2.5 text-[12px] leading-snug text-white backdrop-blur ${SHADOW}`}>
+        <p className="text-white/85">We&rsquo;ll connect you with a sales advisor who already has your complete context.</p>
+        <div className="mt-1.5 flex flex-col gap-1 border-t border-white/20 pt-1.5">
+          {turn.items.map((item) => (
+            <span key={item.label} className={item.done ? "text-white" : "text-white/45"}>
+              {item.done ? "✓" : "○"} {item.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
   if (!showPills) return null;
   if (turn.kind === "tool")
     return (
