@@ -147,10 +147,20 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   // new screen at the top (the scroll container outlives the route).
   useEffect(() => {
     const s = useSession.getState();
-    s.setScreen(screenFromPath(pathname, s.selectedPlot));
-    if (pathname !== "/agent") lastScreenPath.current = pathname;
     trail.current ??= readTrail();
     const v = trail.current;
+    // Back never opens the full-screen advisor. If the browser's history moved
+    // onto the advisor entry, step past it to the screen before, or stay put.
+    if (popped.current && pathname === "/agent" && lastScreenPath.current) {
+      if (v.lastIndexOf("/agent", v.length - 2) >= 1) window.history.go(-1);
+      else {
+        popped.current = false;
+        router.replace(lastScreenPath.current);
+      }
+      return;
+    }
+    s.setScreen(screenFromPath(pathname, s.selectedPlot));
+    if (pathname !== "/agent") lastScreenPath.current = pathname;
     // A history move onto the screen before the last one is a step back (the
     // arrow, or the phone's own back); anything else is a step forward.
     // Back may skip several entries (the advisor page is never a Back target),
@@ -229,7 +239,10 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     let i = v.length - 2;
     while (i >= 0 && (v[i] === "/agent" || v[i] === pathname)) i--;
     if (i >= 0) window.history.go(i - (v.length - 1)); // the effect above trims the trail on arrival
-    else router.push(parentOf(pathname));
+    else {
+      const up = parentOf(pathname);
+      if (up !== "/agent") router.push(up); // nothing earlier: stay, never open the advisor
+    }
   };
   const sendFromComposer = (text: string) => {
     // The lead next step opens the plot map right away; the Land Advisor then
