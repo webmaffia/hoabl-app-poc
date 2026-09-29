@@ -60,6 +60,15 @@ export const TOOL_DEFINITIONS: ChatCompletionFunctionTool[] = [
     },
   ),
   fn(
+    "compare_plots",
+    "Compare two or three specific plots side by side. Use whenever the customer asks to compare, or which plot is better, or A versus B. Returns each plot's facts (price, size, rate per sq ft, facing, road width, distance from the entrance, corner, park-facing, status) and the worked-out differences between them.",
+    {
+      plot_a: { type: "string", description: "Plot id or plot number, e.g. IA-07." },
+      plot_b: { type: "string", description: "Plot id or plot number." },
+      plot_c: nullable({ type: "string", description: "Optional third plot id or number." }),
+    },
+  ),
+  fn(
     "get_knowledge",
     "Look up approved facts: a project topic (connectivity with distances in km, location for geography/travel routes/nearby places, payment_plan, booking_policy, title_approvals, timeline, amenities, infrastructure, developer, market) or an objection playbook (why_here, price, consult_spouse, asset_class, finance, stall). Always use this before stating a policy, date, approval or figure.",
     {
@@ -95,6 +104,7 @@ export const TOOL_DEFINITIONS: ChatCompletionFunctionTool[] = [
 export type ToolName =
   | "search_projects"
   | "list_plots"
+  | "compare_plots"
   | "get_knowledge"
   | "calculate_payment"
   | "show"
@@ -244,6 +254,62 @@ export function listPlots(args: ListPlotsArgs, ctx: ToolContext = {}) {
   return { plots: sorted.slice(0, 20).map(plotSummary), total: matches.length };
 }
 
+export interface ComparePlotsArgs {
+  plot_a: string;
+  plot_b: string;
+  plot_c: string | null;
+}
+
+/**
+ * Side-by-side facts for two or three plots, with the differences worked out,
+ * so the advisor can say what each plot gives up and gains rather than reading
+ * out two rows of specs.
+ */
+export function comparePlots(args: ComparePlotsArgs, ctx: ToolContext = {}) {
+  const refs = [args.plot_a, args.plot_b, args.plot_c].filter((r): r is string => Boolean(r));
+  const plots = refs.map((r) => findPlot(r, ctx.overrides));
+  const missing = refs.filter((_, i) => !plots[i]);
+  if (missing.length) return { error: `no plot ${missing.join(", ")}` };
+  const found = plots as Plot[];
+
+  const rows = found.map((p) => ({
+    ...plotSummary(p),
+    project_name: getProject(p.projectId)?.name ?? p.projectId,
+    price_per_sqft: Math.round(p.price / p.sizeSqft),
+  }));
+
+  const by = <T,>(pick: (r: (typeof rows)[number]) => T, better: "min" | "max") => {
+    const vals = rows.map(pick) as unknown as number[];
+    const target = better === "min" ? Math.min(...vals) : Math.max(...vals);
+    const winners = rows.filter((_, i) => vals[i] === target);
+    return winners.length === rows.length ? null : winners.map((r) => r.plot_no);
+  };
+  const spread = (pick: (r: (typeof rows)[number]) => number) => {
+    const v = rows.map(pick);
+    return Math.max(...v) - Math.min(...v);
+  };
+
+  const differences: string[] = [];
+  const note = (label: string, winners: string[] | null, detail: string) => winners && differences.push(`${label}: ${winners.join(" and ")} ${detail}`);
+  note("Price", by((r) => r.price, "min"), `is the lowest, by up to ₹${spread((r) => r.price)} across these`);
+  note("Size", by((r) => r.size_sqft, "max"), `is the largest, by up to ${spread((r) => r.size_sqft)} sq ft`);
+  note("Rate", by((r) => r.price_per_sqft, "min"), `has the lowest rate per sq ft, up to ₹${spread((r) => r.price_per_sqft)} less`);
+  note("Entrance", by((r) => r.metres_from_entrance, "min"), `is closest to the entrance, by up to ${spread((r) => r.metres_from_entrance)} m`);
+  note("Road", by((r) => r.road_width_m, "max"), `has the widest access road, up to ${spread((r) => r.road_width_m)} m wider`);
+  const corner = rows.filter((r) => r.is_corner).map((r) => r.plot_no);
+  if (corner.length && corner.length < rows.length) differences.push(`Position: ${corner.join(" and ")} ${corner.length > 1 ? "are corner plots" : "is a corner plot"}, the rest are not`);
+  const park = rows.filter((r) => r.is_park_facing).map((r) => r.plot_no);
+  if (park.length && park.length < rows.length) differences.push(`View: ${park.join(" and ")} ${park.length > 1 ? "face" : "faces"} the park, the rest do not`);
+  const taken = rows.filter((r) => r.status !== "available").map((r) => `${r.plot_no} is ${r.status}`);
+  if (taken.length) differences.push(`Availability: ${taken.join(", ")}`);
+
+  return {
+    plots: rows,
+    differences,
+    same_project: new Set(found.map((p) => p.projectId)).size === 1,
+  };
+}
+
 export interface GetKnowledgeArgs {
   project_id: string | null;
   topic: Topic;
@@ -332,6 +398,8 @@ export function runTool(name: string, args: unknown, ctx: ToolContext = {}): unk
       return searchProjects(args as SearchProjectsArgs, ctx);
     case "list_plots":
       return listPlots(args as ListPlotsArgs, ctx);
+    case "compare_plots":
+      return comparePlots(args as ComparePlotsArgs, ctx);
     case "get_knowledge":
       return getKnowledge(args as GetKnowledgeArgs);
     case "calculate_payment":
@@ -356,6 +424,8 @@ export function toolPill(name: string, result: unknown): string {
     }
     case "list_plots":
       return `checking availability · ${r.total} plots in range`;
+    case "compare_plots":
+      return `comparing plots · ${(r.plots as unknown[]).length} side by side`;
     case "get_knowledge":
       return `looking up policy · ${(r.chunks as unknown[]).length} notes`;
     case "calculate_payment":

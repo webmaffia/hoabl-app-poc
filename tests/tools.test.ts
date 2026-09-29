@@ -13,10 +13,11 @@ import {
 import { getPlots } from "@/lib/inventory";
 
 describe("tool definitions", () => {
-  it("has exactly six strict tools", () => {
+  it("has exactly seven strict tools", () => {
     expect(TOOL_DEFINITIONS.map((t) => t.function.name)).toEqual([
       "search_projects",
       "list_plots",
+      "compare_plots",
       "get_knowledge",
       "calculate_payment",
       "show",
