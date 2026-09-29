@@ -213,10 +213,13 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   };
   // Minimise: back to the app, on the screen the customer last had open, else
   // the last one the advisor showed, else recommendations.
-  const minimise = () =>
-    router.push(
-      lastScreenPath.current ?? (lastShow?.kind === "show" ? routeFor({ view: lastShow.view as View, id: lastShow.id }) : "/plots"),
-    );
+  // The conversation carries on across the minimise: mark the route as the
+  // advisor's own so the screen cue doesn't cut off or talk over its reply.
+  const minimise = () => {
+    const target = lastScreenPath.current ?? (lastShow?.kind === "show" ? routeFor({ view: lastShow.view as View, id: lastShow.id }) : "/plots");
+    agentNav.current = target;
+    router.push(target);
+  };
   const toAdvisor = () => router.push("/agent");
   // Back goes to the screen the customer was actually on before. Opened
   // straight onto a screen, it steps up a level instead.
