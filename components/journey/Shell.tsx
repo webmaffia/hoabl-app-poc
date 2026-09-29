@@ -292,7 +292,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
           <div className="flex shrink-0 items-center gap-1.5">
             <button
               onClick={humanRequest}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-site"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-md"
               aria-label="Talk to a human advisor"
               title="Talk to a human advisor"
             >

@@ -48,6 +48,8 @@ export function FilmStrip({
   const [done, setDone] = useState(false);
   const [progress, setProgress] = useState(0);
   const [loopIndex, setLoopIndex] = useState(0);
+  // The silent background loop leaves out the customer-story film.
+  const loop = videos.filter((v) => !v.sound);
   const [blocked, setBlocked] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
   const flags = useRef({ narrated: false, ended: false });
@@ -145,13 +147,13 @@ export function FilmStrip({
           {/* The films keep running silently behind the button, one after another, on a loop. */}
           <video
             key={loopIndex}
-            src={videos[loopIndex].src}
-            poster={videos[loopIndex].poster || poster}
+            src={loop[loopIndex % loop.length].src}
+            poster={loop[loopIndex % loop.length].poster || poster}
             autoPlay
             muted
             playsInline
             preload="auto"
-            onEnded={() => setLoopIndex((i) => (i + 1) % videos.length)}
+            onEnded={() => setLoopIndex((i) => (i + 1) % loop.length)}
             className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />

@@ -145,7 +145,7 @@ export function LiveOverlay({
           <div className="flex shrink-0 flex-col items-center pb-2 text-white">
             <button
               onClick={onHuman}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-gold text-site shadow-lg [filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.5))]"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/45 bg-white/20 text-white backdrop-blur-md shadow-lg [filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.5))]"
               aria-label="Talk to a human advisor"
               title="Talk to a human advisor"
             >
