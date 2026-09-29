@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
-import { entryTicket, getPlots, getProject, OTHER_HOABL_PROJECTS, PROJECTS } from "@/lib/inventory";
+import { entryTicket, getPlots, getProject, PROJECTS } from "@/lib/inventory";
 import { lookupKnowledge } from "@/lib/knowledge";
 import { lakh } from "@/lib/journey";
 import { Badge, Button, Card, Disclosure, Section, Stat } from "@/components/journey/ui";
@@ -210,33 +210,6 @@ export default function ProjectDetail() {
           </div>
         </Section>
       )}
-
-      <Section title="More from HoABL">
-        <p className="mb-2.5 text-[12.5px] text-ink-soft">Not bookable in this demo &mdash; shown for awareness only.</p>
-        <div className="flex flex-col gap-2.5">
-          {OTHER_HOABL_PROJECTS.map((p) => (
-            <div key={p.name} className="flex items-center gap-3 rounded-2xl border border-line bg-card p-2.5 opacity-80">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-site">
-                {p.image ? (
-                  <Image src={p.image} alt={p.name} fill sizes="56px" className="object-cover" />
-                ) : (
-                  <>
-                    <Contours className="absolute inset-0 h-full w-full" opacity={0.3} />
-                    <PlotGrid className="absolute left-1/2 top-1/2 h-10 -translate-x-1/2 -translate-y-1/2 opacity-80" />
-                  </>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-semibold">{p.name}</p>
-                <p className="mt-0.5 flex items-center gap-1 truncate text-[12.5px] text-ink-soft">
-                  <PinIcon className="h-3 w-3 shrink-0" />
-                  {p.location}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Section>
 
       <div className="mt-5 grid grid-cols-2 gap-2 px-4">
         <Button onClick={() => router.push(`/plots/${project.id}/map`)}>See the plot map</Button>
