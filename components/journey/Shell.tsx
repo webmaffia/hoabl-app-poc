@@ -153,9 +153,11 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     const v = trail.current;
     // A history move onto the screen before the last one is a step back (the
     // arrow, or the phone's own back); anything else is a step forward.
-    const back = popped.current && v.length >= 2 && v[v.length - 2] === pathname;
+    // Back may skip several entries (the advisor page is never a Back target),
+    // so cut the trail down to wherever the history landed.
+    const at = popped.current ? v.lastIndexOf(pathname, v.length - 2) : -1;
     popped.current = false;
-    if (back) v.pop();
+    if (at >= 0) v.length = at + 1;
     else if (v[v.length - 1] !== pathname) v.push(pathname);
     saveTrail(v);
     content.current?.scrollTo({ top: 0 });
@@ -220,7 +222,10 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   // straight onto a screen, it steps up a level instead.
   const goBack = () => {
     const v = trail.current ?? readTrail();
-    if (v.length >= 2) router.back(); // the effect above pops the trail on arrival
+    // Skip the advisor page: Back is for app screens, the tile reopens the advisor.
+    let i = v.length - 2;
+    while (i >= 0 && (v[i] === "/agent" || v[i] === pathname)) i--;
+    if (i >= 0) window.history.go(i - (v.length - 1)); // the effect above trims the trail on arrival
     else router.push(parentOf(pathname));
   };
   const sendFromComposer = (text: string) => {
