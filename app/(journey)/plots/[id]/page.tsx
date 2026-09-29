@@ -10,7 +10,7 @@ import { Badge, Button, Card, Disclosure, Section, Stat } from "@/components/jou
 import { Contours, PlotGrid } from "@/components/Contours";
 import { FilmStrip } from "@/components/journey/FilmStrip";
 import { InvestmentForecast } from "@/components/journey/InvestmentForecast";
-import { PinIcon } from "@/components/icons";
+import { DownloadIcon, PinIcon } from "@/components/icons";
 
 const AMENITIES: [string, string][] = [
   ["clubhouse01", "Clifftop clubhouse"],
@@ -70,7 +70,19 @@ export default function ProjectDetail() {
 
       <div className="px-4 pb-3 pt-4">
         {project.illustrative && <Badge tone="gold">Illustrative project</Badge>}
-        <h1 className="mt-1 font-display text-[26px] font-semibold leading-tight tracking-tight">{project.name}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="mt-1 font-display text-[26px] font-semibold leading-tight tracking-tight">{project.name}</h1>
+          {isAnjarle && (
+            <a
+              href="/Isle-of-Anjarle.pdf"
+              download
+              className="mt-1 flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-[12px] font-semibold text-ink-soft active:scale-[0.98]"
+            >
+              <DownloadIcon className="h-3.5 w-3.5" />
+              Brochure
+            </a>
+          )}
+        </div>
         <p className="mt-0.5 flex items-center gap-1 text-[13px] text-ink-soft">
           <PinIcon className="h-3.5 w-3.5" />
           {project.location}

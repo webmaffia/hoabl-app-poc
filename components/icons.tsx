@@ -41,6 +41,9 @@ export const PlayIcon = ({ className }: P) => (
 export const StopIcon = ({ className }: P) => (
   <svg viewBox="0 0 24 24" className={className} {...base}><rect x="7" y="7" width="10" height="10" rx="2" /></svg>
 );
+export const DownloadIcon = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base}><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
+);
 export const GearIcon = ({ className }: P) => (
   <svg viewBox="0 0 24 24" className={className} {...base}>
     <circle cx="12" cy="12" r="3" />
