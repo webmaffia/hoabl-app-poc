@@ -19,6 +19,8 @@ export interface ProjectVideo {
   title: string;
   /** What the Land Advisor says over this film (the films play muted). */
   narration: string;
+  /** The film's own audio is the point (customer stories): it plays with sound, after the narration, and runs to its end. */
+  sound?: boolean;
 }
 
 export interface Project {
@@ -150,6 +152,7 @@ export const PROJECTS: Project[] = [
         src: "/projects/anjarle/videos/testimonials.mp4",
         poster: "/projects/anjarle/videos/testimonials.jpg",
         title: "Customer stories",
+        sound: true,
         narration:
           "And this is what our customers say. Over 6,500 families across 27 countries have chosen HoABL land. Take a moment to hear from a few of them.",
       },

@@ -10,16 +10,27 @@
 //   4. next   once the narration ends, a few more seconds of footage, then the
 //             next film (straight away if this one has already ended)
 //
-// Full width at 16:9, so nothing in the films (logos, titles) is cropped.
+// The films play full screen, inside the phone frame. Skip (or the last film
+// ending) leaves the hero with a "Take me on the tour" button, and the Land
+// Advisor asks where the customer wants to start, with quick replies below.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import type { ProjectVideo } from "@/lib/inventory";
 import { avatar } from "@/lib/avatar/controller";
+import { useSession } from "@/lib/store";
 import { PlayIcon } from "@/components/icons";
 
-const TAIL_MS = 4000; // footage after the narration ends
-const GAP_MS = 700; // pause between films when the film has already ended
+const TAIL_MS = 800; // footage after the narration ends, if the film is still running
+const GAP_MS = 250; // pause between films when the film has already ended
+
+const guideLine = (projectName: string, skipped: boolean) =>
+  `${skipped ? "No problem, we can skip the tour." : `That's ${projectName}.`} Quick question: are you looking at this as an investment, or as a getaway you'd enjoy yourself? Tap one below, or just tell me.`;
+
+const replies = (projectName: string): [string, string][] => [
+  ["As an investment", `I'm considering ${projectName} as an investment. What should I look at first?`],
+  ["A getaway for me", `I'm looking for a getaway for myself at ${projectName}. What should I look at first?`],
+  ["Just exploring", `I'm just exploring ${projectName}. Where should I start?`],
+];
 
 export function FilmStrip({
   projectName,
@@ -36,23 +47,31 @@ export function FilmStrip({
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [loopIndex, setLoopIndex] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
   const flags = useRef({ narrated: false, ended: false });
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const video = videos[index];
+  const upcoming = videos[index + 1];
+  const send = useSession((s) => s.send);
 
-  const finish = useCallback(() => {
-    setDone(true);
-    onFinished();
-    avatar.speak(`That's ${projectName}. Take a look at the details, and when you're ready, I'll take you to the plots.`);
-  }, [onFinished, projectName]);
+  const finish = useCallback(
+    (skipped = false) => {
+      clearTimeout(advance.current);
+      avatar.interrupt();
+      setDone(true);
+      onFinished();
+      avatar.speak(guideLine(projectName, skipped));
+    },
+    [onFinished, projectName],
+  );
 
   const next = useCallback(() => {
     clearTimeout(advance.current);
     setProgress(0);
     if (index + 1 < videos.length) setIndex(index + 1);
-    else finish();
+    else finish(false);
   }, [index, videos.length, finish]);
 
   const scheduleNext = useCallback(() => {
@@ -79,12 +98,15 @@ export function FilmStrip({
       el.currentTime = 0;
     }
     const cancel = avatar.narrate(video.narration, {
+      // A film with its own sound waits for the advisor to finish, then plays
+      // with audio and runs to its end, so the customer hears every word.
       onStart: () => {
-        void play();
+        if (!video.sound) void play();
       },
       onEnd: () => {
         flags.current.narrated = true;
-        scheduleNext();
+        if (video.sound) void play();
+        else scheduleNext();
       },
     });
     return () => {
@@ -96,31 +118,64 @@ export function FilmStrip({
 
   if (done) {
     return (
-      <div className="relative aspect-video w-full overflow-hidden bg-site">
-        <Image src={poster} alt={projectName} fill sizes="428px" className="object-cover" priority />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-        <button
-          onClick={() => {
-            setIndex(0);
-            setDone(false);
-          }}
-          className="bg-gold absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full px-5 py-3 text-[14px] font-semibold text-site shadow-lg"
-        >
-          <PlayIcon className="h-4 w-4" />
-          Watch again
-        </button>
-      </div>
+      <>
+        <div className="relative aspect-video w-full overflow-hidden bg-site">
+          {/* The films keep running silently behind the button, one after another, on a loop. */}
+          <video
+            key={loopIndex}
+            src={videos[loopIndex].src}
+            poster={videos[loopIndex].poster || poster}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            onEnded={() => setLoopIndex((i) => (i + 1) % videos.length)}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+          <button
+            onClick={() => {
+              setIndex(0);
+              setDone(false);
+            }}
+            className="bg-gold absolute bottom-3 right-3 flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-[12px] font-semibold text-site shadow-lg"
+          >
+            <PlayIcon className="h-3 w-3" />
+            Take me on the tour
+          </button>
+        </div>
+        <div className="border-b border-line bg-card px-4 py-3">
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-verd">Where would you like to start?</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {replies(projectName).map(([label, text]) => (
+              <button
+                key={label}
+                onClick={() => void send(text)}
+                className="rounded-full border border-line bg-paper px-3.5 py-2 text-[13px] font-medium text-ink active:bg-verd-soft"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden bg-black">
+    // The hero keeps its place in the page; the film itself fills the phone frame.
+    <div className="aspect-video w-full bg-black">
+      <div className="fixed inset-0 z-[60] overflow-hidden bg-black">
+        {upcoming && <video key={upcoming.src} src={upcoming.src} preload="auto" muted className="hidden" />}
+        {/* Whole frame, never cropped; a soft blur of the poster fills the bars. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={video.poster} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
         <video
           key={video.src}
           ref={ref}
           src={video.src}
           poster={video.poster}
-          muted
+          muted={!video.sound}
           playsInline
           preload="auto"
           onTimeUpdate={(e) => {
@@ -132,12 +187,12 @@ export function FilmStrip({
             // Hold on the last frame until the Land Advisor has finished.
             if (flags.current.narrated) scheduleNext();
           }}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-contain"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/45" />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 px-2.5 pt-2.5">
-          <div className="flex gap-1">
+        <div className="absolute inset-x-0 top-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <div className="pointer-events-none flex gap-1">
             {videos.map((v, i) => (
               <span key={v.src} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/30">
                 <span
@@ -147,9 +202,17 @@ export function FilmStrip({
               </span>
             ))}
           </div>
-          <span className="mt-2 inline-block rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
-            {index + 1}/{videos.length} · {video.title}
-          </span>
+          <div className="mt-2.5 flex items-center justify-between gap-2">
+            <span className="pointer-events-none rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
+              {index + 1}/{videos.length} · {video.title}
+            </span>
+            <button
+              onClick={() => finish(true)}
+              className="rounded-full bg-black/45 px-4 py-1.5 text-[13px] font-semibold text-white ring-1 ring-white/40 backdrop-blur active:bg-black/70"
+            >
+              Skip
+            </button>
+          </div>
         </div>
 
         {blocked && (
@@ -161,6 +224,7 @@ export function FilmStrip({
             Play
           </button>
         )}
+      </div>
     </div>
   );
 }
