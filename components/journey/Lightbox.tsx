@@ -4,6 +4,7 @@
 // tap the backdrop or the cross to close.
 
 import { useEffect, useRef, useState } from "react";
+import { FramePortal } from "@/components/journey/FramePortal";
 
 export type LightboxImage = { src: string; label: string };
 
@@ -28,8 +29,9 @@ export function Lightbox({ images, start, onClose }: { images: LightboxImage[]; 
   const arrow = "absolute top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur active:bg-black/70";
 
   return (
+    <FramePortal>
     <div
-      className="fixed inset-0 z-[80] touch-pan-y select-none bg-black/90 backdrop-blur-sm"
+      className="absolute inset-0 z-[80] touch-pan-y select-none bg-black/90 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={img.label}
@@ -99,5 +101,6 @@ export function Lightbox({ images, start, onClose }: { images: LightboxImage[]; 
         </>
       )}
     </div>
+    </FramePortal>
   );
 }

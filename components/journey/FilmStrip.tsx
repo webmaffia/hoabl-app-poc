@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectVideo } from "@/lib/inventory";
 import { avatar } from "@/lib/avatar/controller";
 import { PlayIcon } from "@/components/icons";
+import { FramePortal } from "@/components/journey/FramePortal";
 
 const TAIL_MS = 800; // footage after the narration ends, if the film is still running
 const GAP_MS = 250; // pause between films when the film has already ended
@@ -177,8 +178,9 @@ export function FilmStrip({
   return (
     // The hero keeps its place in the page; the film itself fills the phone frame.
     <div className="aspect-video w-full bg-black">
+      <FramePortal>
       <div
-        className="fixed inset-0 z-[60] touch-pan-y select-none overflow-hidden bg-black"
+        className="absolute inset-0 z-[60] touch-pan-y select-none overflow-hidden bg-black"
         onPointerDown={(e) => (swipeFrom.current = { x: e.clientX, y: e.clientY })}
         onPointerUp={(e) => onSwipeEnd(e.clientX, e.clientY)}
         onPointerCancel={() => (swipeFrom.current = null)}
@@ -245,6 +247,7 @@ export function FilmStrip({
           </button>
         )}
       </div>
+      </FramePortal>
     </div>
   );
 }
