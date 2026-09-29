@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
 import { getPlots, getProject, type Plot } from "@/lib/inventory";
 import { lakh, sqft } from "@/lib/journey";
+import { TOKEN_AMOUNT } from "@/lib/knowledge";
 import { Badge, Button, Card, ScreenTitle } from "@/components/journey/ui";
 import { avatar } from "@/lib/avatar/controller";
 import { plotLine } from "@/lib/avatar/screen-lines";
@@ -15,7 +16,7 @@ import { plotLine } from "@/lib/avatar/screen-lines";
 export default function PlotMap() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { overrides, selectedPlot, selectPlot, send, profile, booking } = useSession();
+  const { overrides, selectedPlot, selectPlot, send, profile, booking, setBooking } = useSession();
   const project = getProject(id);
   const plots = useMemo(() => (project ? getPlots(project.id, overrides) : []), [project, overrides]);
   const prices = plots.map((p) => p.price);
@@ -157,10 +158,26 @@ export default function PlotMap() {
               Work out EMI
             </Button>
             <Button
-              disabled={selected.status !== "available"}
-              onClick={() => void send(`I want to book plot ${selected.plotNo}.`)}
+              disabled={selected.status !== "available" && booking?.plot_id !== selected.id}
+              onClick={() => {
+                // Deterministic: hold the plot here rather than hoping the advisor's reply does.
+                if (booking?.plot_id !== selected.id) {
+                  setBooking({
+                    booking_id: `BK-${selected.plotNo}-${Date.now().toString(36).toUpperCase().slice(-5)}`,
+                    plot_id: selected.id,
+                    plot_no: selected.plotNo,
+                    project_id: project.id,
+                    project_name: project.name,
+                    size_sqft: selected.sizeSqft,
+                    price: selected.price,
+                    token_amount: TOKEN_AMOUNT,
+                    status: "initiated",
+                  });
+                }
+                router.push("/booking");
+              }}
             >
-              Book this plot
+              {booking?.plot_id === selected.id ? "Go to booking" : "Book this plot"}
             </Button>
           </div>
           <button onClick={() => void send(`Tell me about plot ${selected.plotNo}.`)} className="mt-2 w-full py-1.5 text-[13px] font-semibold text-verd">
