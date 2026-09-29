@@ -74,6 +74,28 @@ export function FilmStrip({
     else finish(false);
   }, [index, videos.length, finish]);
 
+  const goTo = useCallback(
+    (i: number) => {
+      if (i === index || i < 0 || i >= videos.length) return;
+      clearTimeout(advance.current);
+      setProgress(0);
+      setIndex(i);
+    },
+    [index, videos.length],
+  );
+
+  // Swipe left for the next film, right for the previous one.
+  const swipeFrom = useRef<{ x: number; y: number } | null>(null);
+  const onSwipeEnd = (x: number, y: number) => {
+    const from = swipeFrom.current;
+    swipeFrom.current = null;
+    if (!from) return;
+    const dx = x - from.x;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(y - from.y)) return;
+    if (dx < 0) next();
+    else goTo(index - 1);
+  };
+
   const scheduleNext = useCallback(() => {
     clearTimeout(advance.current);
     advance.current = setTimeout(next, flags.current.ended ? GAP_MS : TAIL_MS);
@@ -165,7 +187,12 @@ export function FilmStrip({
   return (
     // The hero keeps its place in the page; the film itself fills the phone frame.
     <div className="aspect-video w-full bg-black">
-      <div className="fixed inset-0 z-[60] overflow-hidden bg-black">
+      <div
+        className="fixed inset-0 z-[60] touch-pan-y select-none overflow-hidden bg-black"
+        onPointerDown={(e) => (swipeFrom.current = { x: e.clientX, y: e.clientY })}
+        onPointerUp={(e) => onSwipeEnd(e.clientX, e.clientY)}
+        onPointerCancel={() => (swipeFrom.current = null)}
+      >
         {upcoming && <video key={upcoming.src} src={upcoming.src} preload="auto" muted className="hidden" />}
         {/* Whole frame, never cropped; a soft blur of the poster fills the bars. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -192,14 +219,17 @@ export function FilmStrip({
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/45" />
 
         <div className="absolute inset-x-0 top-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <div className="pointer-events-none flex gap-1">
+          <div className="flex gap-1">
             {videos.map((v, i) => (
-              <span key={v.src} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/30">
-                <span
-                  className="block h-full rounded-full bg-white"
-                  style={{ width: `${i < index ? 100 : i === index ? progress * 100 : 0}%`, transition: i === index ? "width 250ms linear" : "none" }}
-                />
-              </span>
+              // A tall tap target around a thin bar.
+              <button key={v.src} onClick={() => goTo(i)} aria-label={`Go to ${v.title}`} className="flex-1 py-2.5">
+                <span className="block h-[3px] overflow-hidden rounded-full bg-white/30">
+                  <span
+                    className="block h-full rounded-full bg-white"
+                    style={{ width: `${i < index ? 100 : i === index ? progress * 100 : 0}%`, transition: i === index ? "width 250ms linear" : "none" }}
+                  />
+                </span>
+              </button>
             ))}
           </div>
           <div className="mt-2.5 flex items-center justify-between gap-2">
