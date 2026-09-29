@@ -4,7 +4,7 @@
 
 import { findPlot } from "@/lib/inventory";
 
-export type View = "recommendations" | "project" | "plots" | "plot" | "calculator" | "booking" | "kyc" | "loan";
+export type View = "recommendations" | "project" | "plots" | "plot" | "calculator" | "booking" | "kyc" | "loan" | "plan";
 
 export interface Screen {
   view: View;
@@ -20,6 +20,7 @@ export const VIEW_LABEL: Record<View, string> = {
   booking: "Booking",
   kyc: "KYC",
   loan: "Loan eligibility",
+  plan: "Payment plan",
 };
 
 export function routeFor(screen: Screen): string {
@@ -42,6 +43,8 @@ export function routeFor(screen: Screen): string {
       return "/booking/kyc";
     case "loan":
       return "/money/loan";
+    case "plan":
+      return "/booking/plan";
   }
 }
 
@@ -54,7 +57,7 @@ export function screenFromPath(path: string, selectedPlot: string | null): Scree
     return { view: "project", id: parts[1] };
   }
   if (parts[0] === "money") return { view: parts[1] === "loan" ? "loan" : "calculator", id: selectedPlot };
-  if (parts[0] === "booking") return { view: parts[1] === "kyc" ? "kyc" : "booking", id: selectedPlot };
+  if (parts[0] === "booking") return { view: parts[1] === "kyc" ? "kyc" : parts[1] === "plan" ? "plan" : "booking", id: selectedPlot };
   return null;
 }
 

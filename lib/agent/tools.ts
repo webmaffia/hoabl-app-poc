@@ -15,7 +15,7 @@ import {
 } from "@/lib/inventory";
 import { INDICATIVE_RATE, TOKEN_AMOUNT, TOPICS, lookupKnowledge, type Topic } from "@/lib/knowledge";
 
-export const VIEWS = ["recommendations", "project", "plots", "plot", "calculator", "booking", "kyc", "loan"] as const;
+export const VIEWS = ["recommendations", "project", "plots", "plot", "calculator", "booking", "kyc", "loan", "plan"] as const;
 export type View = (typeof VIEWS)[number];
 
 const PURPOSES: Purpose[] = ["investment", "holiday_home", "self_use", "rental_income", "commercial"];
@@ -112,6 +112,8 @@ export type ToolName =
 
 export interface ToolContext {
   overrides?: PlotOverrides;
+  /** Where the customer stands in the booking journey: token, then KYC, then loan. */
+  flow?: { paid: boolean; kyc: boolean };
 }
 
 // ---------------------------------------------------------------- handlers
@@ -367,6 +369,24 @@ export function show(args: ShowArgs, ctx: ToolContext = {}) {
     const plot = args.id ? findPlot(args.id, ctx.overrides) : undefined;
     if (!plot) return { ok: false, error: "view plot needs a valid plot id or plot number" };
     return { ok: true, view: args.view, id: plot.id };
+  }
+  // The booking journey runs in order: token payment, KYC, then the loan check.
+  if (ctx.flow) {
+    if (args.view === "plan" && !ctx.flow.paid) {
+      return { ok: false, error: "The payment plan opens after the token payment and KYC. Tell the customer to pay the token on the booking screen first." };
+    }
+    if (args.view === "plan" && !ctx.flow.kyc) {
+      return { ok: false, error: "The payment plan opens after KYC. Tell the customer to complete KYC first; do not open the plan yet." };
+    }
+    if (args.view === "kyc" && !ctx.flow.paid) {
+      return { ok: false, error: "KYC comes after the token payment. Tell the customer to pay the token on the booking screen first; do not open KYC or loan yet." };
+    }
+    if (args.view === "loan" && !ctx.flow.paid) {
+      return { ok: false, error: "The loan check comes after the token payment and KYC. Tell the customer to pay the token on the booking screen first." };
+    }
+    if (args.view === "loan" && !ctx.flow.kyc) {
+      return { ok: false, error: "The loan check comes after KYC. Tell the customer to complete KYC first; do not open loan yet." };
+    }
   }
   // Other views take an optional plot for context.
   const plot = args.id ? findPlot(args.id, ctx.overrides) : undefined;

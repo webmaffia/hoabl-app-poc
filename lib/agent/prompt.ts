@@ -94,6 +94,8 @@ export interface TurnContext {
   screen?: { view: string; id: string | null } | null;
   booking?: { booking_id: string; plot_no: string; project_name: string; price: number; token_amount: number; status: string } | null;
   kyc?: boolean;
+  /** The next payment-plan step still to do ("i20", "allotment", "i40", "registration"), null when all done. */
+  plan?: string | null;
   loan?: { eligibleAmount: number; rate: number; sanctioned: boolean } | null;
 }
 
@@ -103,6 +105,10 @@ function contextLines(ctx: TurnContext | undefined): string {
   if (ctx.screen) lines.push(`- On screen: ${ctx.screen.view}${ctx.screen.id ? ` (${ctx.screen.id})` : ""}. "This one" or "this plot" usually means what is on screen.`);
   if (ctx.booking) lines.push(`- Booking ${ctx.booking.booking_id}: plot ${ctx.booking.plot_no} at ${ctx.booking.project_name}, token ${ctx.booking.status === "paid" ? "paid" : "not yet paid"}.`);
   if (ctx.kyc) lines.push("- KYC is complete.");
+  if (ctx.kyc && ctx.plan !== undefined) {
+    const label: Record<string, string> = { i20: "the 20% instalment", allotment: "the allotment letter", i40: "the 40% instalment", registration: "registration" };
+    lines.push(ctx.plan ? `- After KYC the next step is ${label[ctx.plan] ?? ctx.plan}, on the payment plan screen.` : "- Every step is done: the booking is complete and the plot is registered.");
+  }
   if (ctx.loan) lines.push(`- Loan check done: in-principle eligibility on record${ctx.loan.sanctioned ? ", in-principle sanction issued" : ""}.`);
   return lines.length ? `\nSession\n${lines.join("\n")}\n` : "";
 }
@@ -144,6 +150,7 @@ Flow
 - Always recommend Isle of Anjarle first: it's HoABL's featured project, and search_projects lists it first. Tie it to what the customer told you. If its plots are above their budget, say so plainly and bring in the instalment plan and financing. Never claim it fits a budget it doesn't. Mention the others briefly as alternatives.
 - Once the customer names one project or plot to focus on ("just show me this one," "let's stick with Anjarle," "I only want to see plot IA-07"), stop introducing other plots or projects. Answer only about the one named until the customer asks to compare or look elsewhere again.
 - When a project or plot is being discussed, call show so the screen follows the conversation.
+- The booking journey runs in order: token payment, then KYC, then the payment plan (20% instalment, allotment letter, 40% instalment, registration). The loan check is optional and can happen any time after KYC. Never open or offer a later step before the earlier one is done (see Session). If the customer asks to jump ahead, say plainly which step to finish first and show that screen. If show returns an error about the order, follow it.
 - For plot questions such as size, price or "closest to the entrance", call list_plots. To compare specific plots, call compare_plots. Only pass max_price when the customer sets a price limit in that message.
 - For comparisons across projects, call get_knowledge once with project_id null. It returns every project. For policies, timelines, approvals, amenities, infrastructure, geography/travel routes and objections, call get_knowledge. For EMI, call calculate_payment.
 - Objections: on price, pull get_knowledge topic "price" and name a specific smaller plot and its price if one is known from list_plots. On "why here", pull "why_here". Do the same for consult_spouse, asset_class, finance and stall.
@@ -158,7 +165,9 @@ Welcome questions
 After booking
 - Messages starting with [App event] come from the app, not the customer. Respond to what happened in one or two sentences, then guide the next step. Don't thank them for the message itself.
 - Token paid: congratulate them briefly, confirm the plot is now held for them, and point out that their confirmation and payment schedule are on screen. Ask whether they'd like to finish KYC now, which takes about two minutes. Don't call show yet; when they say yes, call show with view "kyc".
-- KYC complete: confirm it in one sentence. If they plan to use a loan or haven't said, offer a quick in-principle eligibility check and call show with view "loan". If they are self-funding, explain when the next instalment is due instead. Don't mention a relationship manager yet.
+- KYC complete: confirm it in one sentence. If they plan to use a loan or haven't said, offer a quick in-principle eligibility check and call show with view "loan". If they are self-funding, explain when the next instalment is due instead. Then tell them the next step is the payment plan and call show with view "plan" once they are ready. Don't mention a relationship manager yet.
+- Payment plan step done (20% instalment, allotment letter, 40% instalment): confirm it in one sentence, say what the next step is from Session, and ask if they are ready. The plan screen already shows the next button, so don't call show again while they are on it.
+- Registration done: congratulate them warmly, say every step is complete and the plot is registered, and say the booking is finished. Don't invent further steps.
 - Loan in-principle result: summarise where they stand in one breath (plot held, token paid, KYC done, loan in-principle), say a relationship manager will call within a day, and ask if anything else would help. Say "in-principle" whenever you mention the loan.
 - Never say a loan is approved or sanctioned outright. It is in-principle until the bank sanctions it.
 

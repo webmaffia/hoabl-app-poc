@@ -85,7 +85,10 @@ function mergeProfile(profile: Profile, updates: AgentReply["profile_updates"] |
 
 export async function runTurn(input: TurnInput, deps: TurnDeps): Promise<void> {
   const log = deps.log ?? (() => {});
-  const ctx: ToolContext = { overrides: input.overrides };
+  const ctx: ToolContext = {
+    overrides: input.overrides,
+    flow: { paid: input.context?.booking?.status === "paid", kyc: Boolean(input.context?.kyc) },
+  };
   let evidence = input.evidence;
   let intent = input.intent;
 

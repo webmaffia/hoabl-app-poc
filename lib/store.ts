@@ -110,6 +110,16 @@ export interface LoanResult {
   sanction?: { ref: string; amount: number; validUntil: number };
 }
 
+/** The post-KYC steps of the booking, in order, each stamped when done. */
+export const PLAN_STEPS = ["i20", "allotment", "i40", "registration"] as const;
+export type PlanStep = (typeof PLAN_STEPS)[number];
+export type PlanProgress = Partial<Record<PlanStep, number>>;
+
+/** The next step still to do, or null once registration is complete. */
+export function nextPlanStep(plan: PlanProgress): PlanStep | null {
+  return PLAN_STEPS.find((k) => !plan[k]) ?? null;
+}
+
 interface SessionState {
   profile: Profile;
   intent: Intent;
@@ -126,6 +136,7 @@ interface SessionState {
   booking: Booking | null;
   kyc: Kyc | null;
   loan: LoanResult | null;
+  plan: PlanProgress;
   trace: TraceEntry[];
   metrics: TurnMetric[];
   startedAt: number | null;
@@ -156,6 +167,7 @@ interface SessionState {
   markPaid: (method: string) => void;
   setKyc: (kyc: Kyc) => void;
   setLoan: (loan: LoanResult) => void;
+  completePlanStep: (step: PlanStep) => void;
   reset: () => void;
 }
 
@@ -174,6 +186,7 @@ const initial = () => ({
   booking: null as Booking | null,
   kyc: null as Kyc | null,
   loan: null as LoanResult | null,
+  plan: {} as PlanProgress,
   trace: [] as TraceEntry[],
   metrics: [] as TurnMetric[],
   startedAt: null as number | null,
@@ -190,7 +203,7 @@ export const useSession = create<SessionState>()(
       async function runTurn(user: string | null, visible: Turn | null) {
         // A new message while a turn is running replaces that turn.
         if (get().busy) get().abort();
-        const { history, profile, intent, evidence, overrides, screen, booking, kyc, loan } = get();
+        const { history, profile, intent, evidence, overrides, screen, booking, kyc, loan, plan } = get();
         const controller = new AbortController();
         inflight = controller;
         const turnNo = get().metrics.length + 1;
@@ -218,7 +231,7 @@ export const useSession = create<SessionState>()(
               intent,
               evidence,
               overrides,
-              context: { screen, booking: booking && { ...booking }, kyc: Boolean(kyc), loan: loan && { eligibleAmount: loan.eligibleAmount, rate: loan.rate, sanctioned: Boolean(loan.sanction) } },
+              context: { screen, booking: booking && { ...booking }, kyc: Boolean(kyc), plan: nextPlanStep(plan), loan: loan && { eligibleAmount: loan.eligibleAmount, rate: loan.rate, sanctioned: Boolean(loan.sanction) } },
             }),
             signal: controller.signal,
           });
@@ -450,6 +463,7 @@ export const useSession = create<SessionState>()(
 
         setKyc: (kyc) => set({ kyc }),
         setLoan: (loan) => set({ loan }),
+        completePlanStep: (step) => set((s) => ({ plan: { ...s.plan, [step]: Date.now() } })),
       };
     },
     {
@@ -470,6 +484,7 @@ export const useSession = create<SessionState>()(
         booking: s.booking,
         kyc: s.kyc,
         loan: s.loan,
+        plan: s.plan,
         trace: s.trace,
         metrics: s.metrics,
         startedAt: s.startedAt,

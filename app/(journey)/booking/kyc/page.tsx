@@ -53,6 +53,20 @@ export default function Kyc() {
 
   const idx = ORDER.indexOf(step);
 
+  // KYC follows the token payment: send the customer back to pay first.
+  if (booking?.status !== "paid" && !kyc) {
+    return (
+      <div>
+        <ScreenTitle eyebrow="Verify your identity" title="Pay the token first" sub="KYC opens once your token payment is done." />
+        <div className="mt-5 px-4">
+          <Button className="w-full" onClick={() => router.push("/booking")}>
+            Go to booking
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <ScreenTitle eyebrow="Verify your identity" title={step === "done" ? "KYC complete" : "Quick KYC"} sub="Takes about two minutes." right={<SandboxTag />} />
@@ -174,7 +188,10 @@ export default function Kyc() {
               </div>
             ))}
           </Card>
-          <Button className="mt-4 w-full" onClick={() => router.push("/money/loan")}>
+          <Button className="mt-4 w-full" onClick={() => router.push("/booking/plan")}>
+            Continue to payment plan
+          </Button>
+          <Button variant="secondary" className="mt-2 w-full" onClick={() => router.push("/money/loan")}>
             Check loan eligibility
           </Button>
           <p className="mt-3 text-center text-[11.5px] text-ink-soft">Sandbox verdict. No identity documents were checked.</p>

@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "@/lib/store";
+import { nextPlanStep, useSession } from "@/lib/store";
 import { avatar, useAvatar } from "@/lib/avatar/controller";
 import { routeFor, screenFromPath, VIEW_LABEL, type View } from "@/lib/journey";
 import { findPlot } from "@/lib/inventory";
@@ -57,6 +57,7 @@ function parentOf(path: string): string {
   if (parts[0] === "plots" && parts[1]) return "/plots";
   // The booking journey steps back the way it came: loan → KYC → booking → plots.
   if (parts[0] === "money" && parts[1] === "loan") return "/booking/kyc";
+  if (parts[0] === "booking" && parts[1] === "plan") return "/booking/kyc";
   if (parts[0] === "booking" && parts[1] === "kyc") return "/booking";
   if (parts[0] === "booking" || parts[0] === "money") {
     const plot = useSession.getState().selectedPlot;
@@ -74,6 +75,14 @@ const PROJECT_NEXT_STEPS = [
   "How far is it from Mumbai?",
   "What's the payment plan?",
 ];
+// Chips for the post-KYC steps, keyed by the step that's next.
+const PLAN_CHIPS: Record<string, string[]> = {
+  i20: ["Take me to the 20% instalment", "What happens next?", "Check my loan eligibility"],
+  allotment: ["Get my allotment letter", "What is an allotment letter?"],
+  i40: ["Take me to the 40% instalment", "What happens next?"],
+  registration: ["Take me to registration", "What do I get at registration?"],
+  done: [],
+};
 const noopSubscribe = () => () => {};
 
 export function JourneyShell({ children }: { children: ReactNode }) {
@@ -81,7 +90,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   // sessionStorage only exists in the browser, so render after hydration.
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  const { turns, busy, error, profile, send, requestHuman, screen, screenSeq, selectedPlot, overrides, onboarding } = useSession();
+  const { turns, busy, error, profile, send, requestHuman, screen, screenSeq, selectedPlot, overrides, onboarding, booking, kyc, plan } = useSession();
   const { mode, note, liveEnabled } = useAvatar();
   const [showPills, setShowPills] = useState(readPills);
   const greeted = useRef(false);
@@ -185,6 +194,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
       firstName: s.profile.name?.split(" ")[0] ?? null,
       booking: s.booking && { plot_no: s.booking.plot_no, status: s.booking.status },
       kycDone: Boolean(s.kyc),
+      plan: nextPlanStep(s.plan),
     });
     const lastTurn = s.metrics[s.metrics.length - 1];
     const askedJustNow = s.busy && lastTurn && Date.now() - lastTurn.startedAt < 1500;
@@ -202,13 +212,39 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   const onProject = onScreen && screen?.view === "project";
   // Screens that speak for themselves: no Land Advisor strip with its latest line.
   const hideDock =
-    onProject || (onScreen && (screen?.view === "recommendations" || screen?.view === "plots" || screen?.view === "plot" || screen?.view === "booking" || screen?.view === "kyc" || screen?.view === "loan"));
+    onProject || (onScreen && (screen?.view === "recommendations" || screen?.view === "plots" || screen?.view === "plot" || screen?.view === "booking" || screen?.view === "kyc" || screen?.view === "loan" || screen?.view === "plan"));
   // On the plot map, a selected plot that's free to book leads with "Book this plot".
   const onMap = onScreen && (screen?.view === "plots" || screen?.view === "plot");
   const picked = onMap && selectedPlot ? findPlot(selectedPlot, overrides) : undefined;
   const bookable = picked?.status === "available" && picked.projectId === pathname.split("/")[2];
   const agentChips = last?.kind === "agent" ? last.chips : [];
-  const chips = onProject
+  // The booking journey runs in order (token, KYC, loan): only offer the step that's next.
+  const paid = booking?.status === "paid";
+  const journeyChips =
+    onScreen && screen?.view === "booking"
+      ? !booking
+        ? undefined
+        : !paid
+          ? ["How do I pay the token?", "Is the token refundable?", "Explain my contribution"]
+          : !kyc
+            ? ["Start my KYC", "Why is KYC needed?", "What happens next?"]
+            : PLAN_CHIPS[nextPlanStep(plan) ?? "done"]
+      : onScreen && screen?.view === "kyc"
+        ? !paid
+          ? ["How do I pay the token?", "Is the token refundable?"]
+          : !kyc
+            ? ["What do I need for KYC?", "Is my data safe?"]
+            : ["Continue to my payment plan", "Check my loan eligibility"]
+        : onScreen && screen?.view === "plan"
+          ? !paid
+            ? ["How do I pay the token?"]
+            : !kyc
+              ? ["Start my KYC", "Why is KYC needed?"]
+              : PLAN_CHIPS[nextPlanStep(plan) ?? "done"]
+          : undefined;
+  const chips = journeyChips
+    ? journeyChips
+    : onProject
     ? PROJECT_NEXT_STEPS
     : bookable
       ? [BOOK_PLOT, ...agentChips.filter((c) => !/book/i.test(c))].slice(0, 4)

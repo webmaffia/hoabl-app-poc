@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, type Booking } from "@/lib/store";
+import { nextPlanStep, useSession, type Booking, type PlanProgress } from "@/lib/store";
 import { findPlot } from "@/lib/inventory";
 import { dateIn, inr, lakh, sqft } from "@/lib/journey";
 import { Button, Card, Disclosure, SandboxTag, ScreenTitle, Section } from "@/components/journey/ui";
@@ -21,7 +21,7 @@ const STAGES = ["Connecting to your bank…", "Authorising ₹45,000…", "Confi
 
 export default function BookingPage() {
   const router = useRouter();
-  const { booking, selectedPlot, send, markPaid, sendEvent, overrides, kyc } = useSession();
+  const { booking, selectedPlot, send, markPaid, sendEvent, overrides, kyc, plan } = useSession();
   const [method, setMethod] = useState("UPI");
   const [stage, setStage] = useState<number | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -48,7 +48,7 @@ export default function BookingPage() {
     );
   }
 
-  if (booking.status === "paid") return <Confirmation booking={booking} kycDone={Boolean(kyc)} onKyc={() => router.push("/booking/kyc")} />;
+  if (booking.status === "paid") return <Confirmation booking={booking} kycDone={Boolean(kyc)} plan={plan} onKyc={() => router.push("/booking/kyc")} onPlan={() => router.push("/booking/plan")} />;
 
   const pay = () => {
     setStage(0);
@@ -131,19 +131,26 @@ export default function BookingPage() {
   );
 }
 
-function Confirmation({ booking, kycDone, onKyc }: { booking: Booking; kycDone: boolean; onKyc: () => void }) {
+function Confirmation({ booking, kycDone, plan, onKyc, onPlan }: { booking: Booking; kycDone: boolean; plan: PlanProgress; onKyc: () => void; onPlan: () => void }) {
   // markPaid always stamps paidAt before this screen shows.
   const paidAt = booking.paidAt ?? 0;
-  const steps = [
+  const steps: { date: string; title: string; detail: string; done?: boolean; action?: boolean; planAction?: boolean }[] = [
     { date: dateIn(0, paidAt), title: "Token paid", detail: `${inr(booking.token_amount)} by ${booking.method}`, done: true },
     kycDone
       ? { date: dateIn(0, paidAt), title: "KYC verified", detail: "PAN, Aadhaar e-KYC and liveness", done: true }
       : { date: dateIn(0, paidAt), title: "Complete KYC", detail: "PAN, Aadhaar consent and a quick selfie", action: true },
-    { date: dateIn(30, paidAt), title: "20% instalment", detail: inr(booking.price * 0.2 - booking.token_amount) },
-    { date: dateIn(37, paidAt), title: "Allotment letter", detail: "Within 7 days of the 20% instalment" },
-    { date: dateIn(90, paidAt), title: "40% instalment", detail: inr(booking.price * 0.4) },
-    { date: dateIn(180, paidAt), title: "Registration", detail: `Final 40% · ${inr(booking.price * 0.4)}` },
   ];
+  // The steps after KYC follow the payment plan; only the next one is actionable.
+  const next = nextPlanStep(plan);
+  const later = [
+    { key: "i20", date: dateIn(30, paidAt), title: "20% instalment", detail: inr(booking.price * 0.2 - booking.token_amount) },
+    { key: "allotment", date: dateIn(37, paidAt), title: "Allotment letter", detail: "Within 7 days of the 20% instalment" },
+    { key: "i40", date: dateIn(90, paidAt), title: "40% instalment", detail: inr(booking.price * 0.4) },
+    { key: "registration", date: dateIn(180, paidAt), title: "Registration", detail: `Final 40% · ${inr(booking.price * 0.4)}` },
+  ] as const;
+  for (const l of later) {
+    steps.push({ date: l.date, title: l.title, detail: l.detail, done: Boolean(plan[l.key]), planAction: kycDone && next === l.key });
+  }
 
   return (
     <div>
@@ -175,6 +182,11 @@ function Confirmation({ booking, kycDone, onKyc }: { booking: Booking; kycDone: 
                     <span className="shrink-0 text-[11.5px] text-ink-soft">{s.date}</span>
                   </div>
                   <div className="text-[12.5px] text-ink-soft">{s.detail}</div>
+                  {s.planAction && (
+                    <button onClick={onPlan} className="mt-1.5 rounded-lg bg-gold px-3 py-1.5 text-[12.5px] font-semibold text-site">
+                      Continue
+                    </button>
+                  )}
                   {s.action && (
                     <button onClick={onKyc} className="mt-1.5 rounded-lg bg-gold px-3 py-1.5 text-[12.5px] font-semibold text-site">
                       Start KYC

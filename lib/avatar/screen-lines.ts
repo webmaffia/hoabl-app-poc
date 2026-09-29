@@ -18,6 +18,8 @@ interface CueState {
   firstName: string | null;
   booking: { plot_no: string; status: "initiated" | "paid" } | null;
   kycDone: boolean;
+  /** The next payment-plan step still to do; null when all are done. Omitted when unknown. */
+  plan?: string | null;
 }
 
 export function screenCue(path: string, s: CueState): ScreenCue {
@@ -61,6 +63,18 @@ export function screenCue(path: string, s: CueState): ScreenCue {
   }
 
   if (parts[0] === "booking") {
+    if (parts[1] === "plan") {
+      if (!s.booking || s.booking.status !== "paid") return { interrupt: true, line: "The payment plan opens once your token is paid. Let's finish the booking first." };
+      if (!s.kycDone) return { interrupt: true, line: "The payment plan opens after KYC. Let's finish your KYC first." };
+      const said: Record<string, string> = {
+        i20: "Your KYC is done. Next is the 20% instalment. Tap the button to pay it, and I'll take you through what follows.",
+        allotment: "Your 20% instalment is in. Next is your allotment letter. Tap the button to get it.",
+        i40: "You have your allotment letter. Next is the 40% instalment. Tap the button when you're ready.",
+        registration: "Only registration is left. Pay the final 40% and your plot is registered.",
+      };
+      const line = s.plan === undefined ? "These are your remaining steps. We take them one at a time, in order." : s.plan === null ? "Every step is done, and your plot is registered. That completes your booking." : (said[s.plan] ?? null);
+      return { interrupt: true, line };
+    }
     if (parts[1] === "kyc") {
       return {
         interrupt: true,
@@ -74,7 +88,7 @@ export function screenCue(path: string, s: CueState): ScreenCue {
       interrupt: true,
       line:
         s.booking.status === "paid"
-          ? `Plot ${s.booking.plot_no} is held for you. Here's your confirmation and what happens next.`
+          ? `Plot ${s.booking.plot_no} is held for you. Here's your confirmation and what happens next.${s.booking.status === "paid" && !s.kycDone ? " Your next step is KYC." : ""}`
           : `Here's your booking summary for plot ${s.booking.plot_no}. Choose how you'd like to pay the ₹45,000 token, and the plot is held for you.`,
     };
   }
