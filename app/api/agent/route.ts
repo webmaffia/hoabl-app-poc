@@ -9,10 +9,10 @@ import { emptyProfile } from "@/lib/agent/prompt";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-5.4-mini";
-// gpt-5.x on Chat Completions only allows function tools with reasoning off,
-// which is also the fastest setting for a spoken turn.
-const REASONING = (process.env.OPENAI_REASONING_EFFORT || (/^gpt-5/.test(MODEL) ? "none" : "")) as OpenAI.ReasoningEffort | "";
+const MODEL = process.env.OPENAI_MODEL || "gpt-6-sol";
+// gpt-5.x and gpt-6.x on Chat Completions only allow function tools with
+// reasoning off, which is also the fastest setting for a spoken turn.
+const REASONING = (process.env.OPENAI_REASONING_EFFORT || (/^gpt-[56]/.test(MODEL) ? "none" : "")) as OpenAI.ReasoningEffort | "";
 
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
