@@ -13,7 +13,7 @@ import { avatar, useAvatar } from "@/lib/avatar/controller";
 import { SvgAvatar } from "@/components/SvgAvatar";
 import { ExpandIcon } from "@/components/icons";
 
-export function AvatarStage({ pip, onExpand }: { pip: boolean; onExpand: () => void }) {
+export function AvatarStage({ pip, lift = false, onExpand }: { pip: boolean; /** Sit higher, clear of a pinned bar at the bottom. */ lift?: boolean; onExpand: () => void }) {
   const { mode, status, speaking, listening } = useAvatar();
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -30,7 +30,7 @@ export function AvatarStage({ pip, onExpand }: { pip: boolean; onExpand: () => v
       className={`overflow-hidden bg-site ${
         // The tile floats above everything, the walkthrough included, so the
         // Land Advisor can narrate the films.
-        pip ? "absolute bottom-3 right-3 z-[70] h-[118px] w-[90px] cursor-pointer rounded-2xl shadow-xl ring-2 ring-white/80" : "absolute inset-0 z-0"
+        pip ? `absolute ${lift ? "bottom-[76px]" : "bottom-3"} right-3 z-[70] h-[118px] w-[90px] cursor-pointer rounded-2xl shadow-xl ring-2 ring-white/80` : "absolute inset-0 z-0"
       }`}
       onClick={pip ? onExpand : undefined}
       role={pip ? "button" : undefined}

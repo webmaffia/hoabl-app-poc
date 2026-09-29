@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
@@ -9,6 +10,7 @@ import { lakh } from "@/lib/journey";
 import { Badge, Button, Card, Disclosure, Section, Stat } from "@/components/journey/ui";
 import { Contours, PlotGrid } from "@/components/Contours";
 import { FilmStrip } from "@/components/journey/FilmStrip";
+import { Lightbox, type LightboxImage } from "@/components/journey/Lightbox";
 import { InvestmentForecast } from "@/components/journey/InvestmentForecast";
 import { DownloadIcon, PinIcon } from "@/components/icons";
 
@@ -27,10 +29,14 @@ const AMENITIES: [string, string][] = [
   ["flower-nursary", "Flower nursery"],
 ];
 
+const AMENITY_IMAGES: LightboxImage[] = AMENITIES.map(([file, label]) => ({ src: `/projects/anjarle/amenities/${file}.jpg`, label }));
+const MASTER_PLAN: LightboxImage = { src: "/projects/anjarle/renders/top-plan.jpg", label: "Master plan" };
+
 export default function ProjectDetail() {
+  const [viewer, setViewer] = useState<{ images: LightboxImage[]; start: number } | null>(null);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { overrides, lastSearch, send, markIntroSeen } = useSession();
+  const { overrides, lastSearch, send, markIntroSeen, introSeen } = useSession();
   const project = getProject(id);
   if (!project) return <p className="p-6 text-ink-soft">Project not found.</p>;
 
@@ -53,6 +59,7 @@ export default function ProjectDetail() {
           projectName={project.name}
           videos={films}
           poster={project.image ?? films[0].poster}
+          startDone={introSeen.includes(project.id)}
           onFinished={() => markIntroSeen(project.id)}
         />
       ) : (
@@ -154,20 +161,25 @@ export default function ProjectDetail() {
           <Section title="Amenities">
             <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
               {AMENITIES.map(([file, label]) => (
-                <figure key={file} className="relative h-36 w-44 shrink-0 snap-start overflow-hidden rounded-xl bg-site">
+                <button
+                  key={file}
+                  onClick={() => setViewer({ images: AMENITY_IMAGES, start: AMENITIES.findIndex(([f]) => f === file) })}
+                  className="relative h-36 w-44 shrink-0 snap-start overflow-hidden rounded-xl bg-site text-left"
+                  aria-label={`View ${label}`}
+                >
                   <Image src={`/projects/anjarle/amenities/${file}.jpg`} alt={label} fill sizes="176px" className="object-cover" />
-                  <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6 text-[12px] font-medium text-white">
+                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6 text-[12px] font-medium text-white">
                     {label}
-                  </figcaption>
-                </figure>
+                  </span>
+                </button>
               ))}
             </div>
           </Section>
           <Section title="Master plan">
             <Card className="overflow-hidden">
-              <div className="relative aspect-[4/3]">
-                <Image src="/projects/anjarle/renders/top-plan.jpg" alt="Isle of Anjarle master plan" fill sizes="400px" className="object-cover" />
-              </div>
+              <button onClick={() => setViewer({ images: [MASTER_PLAN], start: 0 })} className="relative block aspect-[4/3] w-full" aria-label="View the master plan">
+                <Image src={MASTER_PLAN.src} alt="Isle of Anjarle master plan" fill sizes="400px" className="object-cover" />
+              </button>
               <p className="px-3.5 py-2.5 text-[12px] text-ink-soft">Master plan by Sanjay Puri Architects. Render, for illustration.</p>
             </Card>
           </Section>
@@ -223,18 +235,24 @@ export default function ProjectDetail() {
         </Section>
       )}
 
-      <div className="mt-5 grid grid-cols-2 gap-2 px-4">
+      <Disclosure>
+        Risk disclosure: land prices can fall as well as rise, and past appreciation doesn&rsquo;t predict future returns. Projections quoted
+        here come from third-party research and aren&rsquo;t guaranteed. Land is illiquid; plan to hold for {project.hold}. Check the
+        registration on the regulator&rsquo;s website before paying.
+      </Disclosure>
+
+      {/* Room for the avatar tile above the pinned buttons at the end of the page. */}
+      <div className="h-28" />
+
+      {/* Pinned to the bottom of the screen while scrolling; the avatar tile floats just above it. */}
+      <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-2 bg-paper/85 px-4 py-3 backdrop-blur">
         <Button onClick={() => router.push(`/plots/${project.id}/map`)}>See the plot map</Button>
         <Button variant="secondary" onClick={() => void send(`Tell me more about ${project.name}.`)}>
           Ask the advisor
         </Button>
       </div>
 
-      <Disclosure>
-        Risk disclosure: land prices can fall as well as rise, and past appreciation doesn&rsquo;t predict future returns. Projections quoted
-        here come from third-party research and aren&rsquo;t guaranteed. Land is illiquid; plan to hold for {project.hold}. Check the
-        registration on the regulator&rsquo;s website before paying.
-      </Disclosure>
+      {viewer && <Lightbox images={viewer.images} start={viewer.start} onClose={() => setViewer(null)} />}
     </div>
   );
 }

@@ -24,6 +24,7 @@ export function LiveOverlay({
   onSend,
   onHuman,
   onMinimise,
+  canMinimise = true,
 }: {
   turns: Turn[];
   busy: boolean;
@@ -35,6 +36,8 @@ export function LiveOverlay({
   onHuman: () => void;
   /** Minimise to the app screens, avatar in the corner. */
   onMinimise: () => void;
+  /** Hidden while the welcome questions run. */
+  canMinimise?: boolean;
 }) {
   const { status, sandbox, listening, interim, note } = useAvatar();
   const end = useRef<HTMLDivElement>(null);
@@ -68,14 +71,16 @@ export function LiveOverlay({
         {status === "live" && sandbox && (
           <span className="rounded-md bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur">Sandbox</span>
         )}
-        <button
-          onClick={onMinimise}
-          className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-black/30 backdrop-blur-md"
-          aria-label="Minimise the advisor and show the app"
-          title="Minimise"
-        >
-          <MinimizeIcon className="h-[18px] w-[18px]" />
-        </button>
+        {canMinimise && (
+          <button
+            onClick={onMinimise}
+            className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-black/30 backdrop-blur-md"
+            aria-label="Minimise the advisor and show the app"
+            title="Minimise"
+          >
+            <MinimizeIcon className="h-[18px] w-[18px]" />
+          </button>
+        )}
       </div>
 
       {(status === "sleeping" || status === "off") && !note && (

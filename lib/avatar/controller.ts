@@ -631,17 +631,27 @@ export const avatar = {
         }
         return true;
       };
+      // A cold avatar (paused, or still connecting) needs several seconds to
+      // come up; the first film waits for it rather than playing in silence.
+      const waitMs = primary?.ready ? 6000 : READY_TIMEOUT_MS + 2000;
       if (!say()) {
         // Not connected yet: reconnect and send the line as soon as it's up.
         void warm();
         const poll = setInterval(() => {
-          if (cancelled || say()) clearInterval(poll);
+          if (cancelled) return clearInterval(poll);
+          if (say()) return clearInterval(poll);
+          if (!usesLive()) {
+            // The avatar gave up and fell back to chat: read at speaking pace.
+            clearInterval(poll);
+            start();
+            timers.push(setTimeout(end, estimateMs));
+          }
         }, 250);
         timers.push(poll as unknown as ReturnType<typeof setTimeout>);
       }
-      // If the voice hasn't started within 6s, don't hold the films hostage.
-      timers.push(setTimeout(() => !started && start(), 6000));
-      timers.push(setTimeout(() => !ended && started && end(), 6000 + estimateMs * 1.6 + 3000));
+      // If the voice still hasn't started, don't hold the films hostage.
+      timers.push(setTimeout(() => !started && start(), waitMs));
+      timers.push(setTimeout(() => !ended && started && end(), waitMs + estimateMs * 1.6 + 3000));
     }
 
     return () => {

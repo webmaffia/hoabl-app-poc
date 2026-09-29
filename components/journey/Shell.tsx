@@ -81,7 +81,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   // sessionStorage only exists in the browser, so render after hydration.
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  const { turns, busy, error, profile, send, requestHuman, screen, screenSeq, selectedPlot, overrides } = useSession();
+  const { turns, busy, error, profile, send, requestHuman, screen, screenSeq, selectedPlot, overrides, onboarding } = useSession();
   const { mode, note, liveEnabled } = useAvatar();
   const [showPills, setShowPills] = useState(readPills);
   const greeted = useRef(false);
@@ -313,7 +313,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
       )}
 
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <AvatarStage pip={onScreen} onExpand={toAdvisor} />
+        <AvatarStage pip={onScreen} lift={onProject} onExpand={toAdvisor} />
 
         {immersive ? (
           <LiveOverlay
@@ -326,10 +326,11 @@ export function JourneyShell({ children }: { children: ReactNode }) {
             onSend={(t) => void send(t)}
             onHuman={humanRequest}
             onMinimise={minimise}
+            canMinimise={!onboarding}
           />
         ) : onScreen ? (
           // Bottom padding keeps the end of every screen clear of the avatar tile.
-          <div ref={content} className="min-h-0 flex-1 overflow-y-auto pb-36">
+          <div ref={content} className={`min-h-0 flex-1 overflow-y-auto ${onProject ? "" : "pb-36"}`}>
             {children}
           </div>
         ) : (

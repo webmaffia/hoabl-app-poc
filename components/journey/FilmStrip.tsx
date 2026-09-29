@@ -17,35 +17,31 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectVideo } from "@/lib/inventory";
 import { avatar } from "@/lib/avatar/controller";
-import { useSession } from "@/lib/store";
 import { PlayIcon } from "@/components/icons";
 
 const TAIL_MS = 800; // footage after the narration ends, if the film is still running
 const GAP_MS = 250; // pause between films when the film has already ended
 
 const guideLine = (projectName: string, skipped: boolean) =>
-  `${skipped ? "No problem, we can skip the tour." : `That's ${projectName}.`} Quick question: are you looking at this as an investment, or as a getaway you'd enjoy yourself? Tap one below, or just tell me.`;
-
-const replies = (projectName: string): [string, string][] => [
-  ["As an investment", `I'm considering ${projectName} as an investment. What should I look at first?`],
-  ["A getaway for me", `I'm looking for a getaway for myself at ${projectName}. What should I look at first?`],
-  ["Just exploring", `I'm just exploring ${projectName}. Where should I start?`],
-];
+  `${skipped ? "No problem, we can skip the tour." : `That's ${projectName}.`} Quick question: are you looking at this as an investment, or as a getaway you'd enjoy yourself? Just tell me.`;
 
 export function FilmStrip({
   projectName,
   videos,
   poster,
   onFinished,
+  startDone = false,
 }: {
   projectName: string;
   videos: ProjectVideo[];
   /** Shown once the films have all played. */
   poster: string;
   onFinished: () => void;
+  /** The customer has already had the tour: open on the hero, not full screen. */
+  startDone?: boolean;
 }) {
   const [index, setIndex] = useState(0);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(startDone);
   const [progress, setProgress] = useState(0);
   const [loopIndex, setLoopIndex] = useState(0);
   // The silent background loop leaves out the customer-story film.
@@ -56,7 +52,6 @@ export function FilmStrip({
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const video = videos[index];
   const upcoming = videos[index + 1];
-  const send = useSession((s) => s.send);
 
   const finish = useCallback(
     (skipped = false) => {
@@ -111,6 +106,13 @@ export function FilmStrip({
 
   // Leaving the page stops the narration: the voice follows the screen.
   useEffect(() => () => avatar.interrupt(), []);
+
+  // Once the tour has started it counts as seen, so leaving and coming back
+  // (maximising the advisor, say) doesn't replay it full screen.
+  useEffect(() => {
+    if (!startDone) onFinished();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Each film: cue it, narrate it, let the voice set the pace.
   useEffect(() => {
@@ -167,20 +169,6 @@ export function FilmStrip({
             <PlayIcon className="h-3 w-3" />
             Take me on the tour
           </button>
-        </div>
-        <div className="border-b border-line bg-card px-4 py-3">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-verd">Where would you like to start?</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {replies(projectName).map(([label, text]) => (
-              <button
-                key={label}
-                onClick={() => void send(text)}
-                className="rounded-full border border-line bg-paper px-3.5 py-2 text-[13px] font-medium text-ink active:bg-verd-soft"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
       </>
     );
