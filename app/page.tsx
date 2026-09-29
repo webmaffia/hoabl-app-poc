@@ -1,6 +1,7 @@
 import { Logo } from "@/components/Logo";
 import { Slideshow, type Slide } from "@/components/Slideshow";
 import { ResumeCta } from "@/components/ResumeCta";
+import { WelcomeBack } from "@/components/WelcomeBack";
 
 // Real amenity photography from the sample project. The app covers HoABL's
 // whole portfolio; Isle of Anjarle is the featured example.
@@ -51,6 +52,7 @@ export default function Landing() {
           </a>
         </p>
       </section>
+      <WelcomeBack />
     </main>
   );
 }
