@@ -5,6 +5,37 @@ import type { Turn } from "@/lib/store";
 import { VIEW_LABEL, type View } from "@/lib/journey";
 import { CheckIcon, ScreenIcon } from "@/components/icons";
 
+const URL_RE = /(https?:\/\/\S+?)(?=[.,;:!?)]*(?:\s|$))/g;
+
+/** Agent text, with a link shown as a tappable card (map pin for Google Maps). */
+function AgentText({ text }: { text: string }) {
+  const parts = text.split(URL_RE);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (i % 2 === 0) return part ? <span key={i} className="whitespace-pre-wrap">{part}</span> : null;
+        const isMap = /maps\.app\.goo\.gl|google\.[a-z.]+\/maps/.test(part);
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="my-1.5 flex items-center gap-2.5 rounded-xl border border-line bg-verd-soft px-3 py-2.5 text-[13.5px] font-semibold text-verd no-underline"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" />
+              <circle cx="12" cy="9.5" r="2.5" />
+            </svg>
+            <span className="flex-1">{isMap ? "Open site location in Google Maps" : "Open link"}</span>
+            <span aria-hidden>↗</span>
+          </a>
+        );
+      })}
+    </>
+  );
+}
+
 export function Transcript({ turns, busy, error, showPills, onRetry }: { turns: Turn[]; busy: boolean; error: string | null; showPills: boolean; onRetry: () => void }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -30,7 +61,7 @@ export function Transcript({ turns, busy, error, showPills, onRetry }: { turns: 
         if (t.kind === "agent")
           return (
             <div key={i} className="mr-auto max-w-[88%] rounded-2xl rounded-bl-md border border-line bg-card px-3.5 py-2.5 text-[15px] leading-snug text-ink">
-              {t.text}
+              <AgentText text={t.text} />
             </div>
           );
         if (t.kind === "event")

@@ -1,5 +1,5 @@
-// The six agent tools: strict JSON schemas for OpenAI, and pure handlers.
-// Keep this list at six. Each extra tool is one more thing the model can pick
+// The agent tools: strict JSON schemas for OpenAI, and pure handlers.
+// Keep this list short. Each extra tool is one more thing the model can pick
 // wrongly under demo pressure.
 
 import type { ChatCompletionFunctionTool } from "openai/resources/chat/completions";
@@ -60,6 +60,17 @@ export const TOOL_DEFINITIONS: ChatCompletionFunctionTool[] = [
     },
   ),
   fn(
+    "find_adjacent_plots",
+    "Find groups of plots that sit next to each other, all available. Use whenever the customer wants several plots together, side by side, adjacent or neighbouring (e.g. 'I want 3 plots next to each other'). NEVER build such a group from list_plots: plot numbers close in value are not always neighbours. Returns groups of exactly `count` plots, side-by-side groups first, then cheapest.",
+    {
+      project_id: { type: "string", enum: PROJECTS.map((p) => p.id) },
+      count: { type: "number", description: "How many plots the customer wants together, 2 or more." },
+      min_size: nullable({ type: "number", description: "Minimum size in sq ft for each plot." }),
+      max_size: nullable({ type: "number", description: "Maximum size in sq ft for each plot." }),
+      max_total_price: nullable({ type: "number", description: "Maximum combined price in rupees." }),
+    },
+  ),
+  fn(
     "compare_plots",
     "Compare two or three specific plots side by side. Use whenever the customer asks to compare, or which plot is better, or A versus B. Returns each plot's facts (price, size, rate per sq ft, facing, road width, distance from the entrance, corner, park-facing, status) and the worked-out differences between them.",
     {
@@ -104,6 +115,7 @@ export const TOOL_DEFINITIONS: ChatCompletionFunctionTool[] = [
 export type ToolName =
   | "search_projects"
   | "list_plots"
+  | "find_adjacent_plots"
   | "compare_plots"
   | "get_knowledge"
   | "calculate_payment"
@@ -254,6 +266,66 @@ export function listPlots(args: ListPlotsArgs, ctx: ToolContext = {}) {
     key === "size" ? a.sizeSqft - b.sizeSqft : key === "distance_from_entrance" ? a.metresFromEntrance - b.metresFromEntrance : a.price - b.price,
   );
   return { plots: sorted.slice(0, 20).map(plotSummary), total: matches.length };
+}
+
+export interface FindAdjacentPlotsArgs {
+  project_id: string;
+  count: number;
+  min_size: number | null;
+  max_size: number | null;
+  max_total_price: number | null;
+}
+
+/**
+ * Groups of `count` available plots that touch on the layout grid (sharing an
+ * edge). Plot numbers run row by row, so IA-02, IA-03, IA-04 are neighbours
+ * while IA-14 and IA-19 are not.
+ */
+export function findAdjacentPlots(args: FindAdjacentPlotsArgs, ctx: ToolContext = {}) {
+  const project = getProject(args.project_id);
+  if (!project) return { error: `unknown project ${args.project_id}`, groups: [], total: 0 };
+  const count = Math.round(args.count);
+  if (!(count >= 2) || count > 6) return { error: "count must be between 2 and 6", groups: [], total: 0 };
+
+  const pool = getPlots(args.project_id, ctx.overrides).filter(
+    (p) =>
+      p.status === "available" &&
+      (args.min_size == null || p.sizeSqft >= args.min_size) &&
+      (args.max_size == null || p.sizeSqft <= args.max_size),
+  );
+  const at = new Map(pool.map((p) => [`${p.gridRow},${p.gridCol}`, p]));
+  const neighbours = (p: Plot) =>
+    [[0, 1], [0, -1], [1, 0], [-1, 0]].flatMap(([dr, dc]) => at.get(`${p.gridRow + dr},${p.gridCol + dc}`) ?? []);
+
+  // Every connected set of `count` plots, de-duplicated by plot ids.
+  const seen = new Set<string>();
+  const sets: Plot[][] = [];
+  const grow = (group: Plot[]) => {
+    const key = group.map((p) => p.id).sort().join("|");
+    if (seen.has(key)) return;
+    seen.add(key);
+    if (group.length === count) return void sets.push(group);
+    for (const member of group) for (const n of neighbours(member)) if (!group.includes(n)) grow([...group, n]);
+  };
+  for (const p of pool) grow([p]);
+
+  const groups = sets
+    .map((g) => {
+      const plots = [...g].sort((a, b) => a.gridRow - b.gridRow || a.gridCol - b.gridCol);
+      const row = plots.every((p) => p.gridRow === plots[0].gridRow);
+      const unbroken = row && plots.every((p, i) => i === 0 || p.gridCol === plots[i - 1].gridCol + 1);
+      return {
+        plots: plots.map(plotSummary),
+        layout: unbroken ? "side by side in one row" : "connected, across rows",
+        total_price: plots.reduce((sum, p) => sum + p.price, 0),
+        total_size_sqft: plots.reduce((sum, p) => sum + p.sizeSqft, 0),
+        _unbroken: unbroken,
+      };
+    })
+    .filter((g) => args.max_total_price == null || g.total_price <= args.max_total_price)
+    .sort((a, b) => Number(b._unbroken) - Number(a._unbroken) || a.total_price - b.total_price);
+
+  return { groups: groups.slice(0, 5).map(({ _unbroken, ...g }) => g), total: groups.length };
 }
 
 export interface ComparePlotsArgs {
@@ -418,6 +490,8 @@ export function runTool(name: string, args: unknown, ctx: ToolContext = {}): unk
       return searchProjects(args as SearchProjectsArgs, ctx);
     case "list_plots":
       return listPlots(args as ListPlotsArgs, ctx);
+    case "find_adjacent_plots":
+      return findAdjacentPlots(args as FindAdjacentPlotsArgs, ctx);
     case "compare_plots":
       return comparePlots(args as ComparePlotsArgs, ctx);
     case "get_knowledge":
@@ -444,6 +518,8 @@ export function toolPill(name: string, result: unknown): string {
     }
     case "list_plots":
       return `checking availability · ${r.total} plots in range`;
+    case "find_adjacent_plots":
+      return `checking neighbouring plots · ${r.total} groups found`;
     case "compare_plots":
       return `comparing plots · ${(r.plots as unknown[]).length} side by side`;
     case "get_knowledge":

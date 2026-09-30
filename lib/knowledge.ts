@@ -53,6 +53,7 @@ export const KNOWLEDGE: Record<string, ProjectKnowledge> = {
       "Anjarle sits at the mouth of the Jog River on the Konkan coast, in North Ratnagiri district. Nine untouched beaches line the coastline, three of them right at the site: Ridley's Beach (Anjarle Beach), Padale Beach and Savane Beach.",
       "A UNESCO-recognised biodiversity hotspot with 300+ species of flora and fauna, and a nesting ground for Olive Ridley sea turtles, with humpback dolphin sightings off nearby Harnai.",
       "By road from Mumbai: Mumbai – Panvel – Mangaon – Khed – Dapoli – Anjarle via NH 66, about 225 km, roughly 5.5 hours today. By road from Pune: via Tamhini Ghat – Mangaon – Khed – Dapoli – Anjarle, about 180 km, roughly 4.5 hours. By train: to Khed railway station, then about 40 km by road.",
+      "Site visits: customers are welcome to visit Isle of Anjarle in person; the sales team arranges the visit and meets you at the site, so confirm a date with them first. Google Maps location of the site: https://maps.app.goo.gl/77RD3drQb6L4i88A6 . When the customer asks about visiting or where the site is, include this exact link once in your reply; the app shows it as a tappable map card.",
       "Nearby beaches: Karde, Murud, Ladghar (Red Sand Beach) and Tamastirth. Nearby heritage sites: the clifftop Kadyavarcha Ganpati temple, Keshavraj Temple, and Suvarnadurg Fort, a 17th-century Maratha sea fort reachable by boat from Harnai.",
     ],
     payment_plan: [

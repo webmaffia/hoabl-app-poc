@@ -4,6 +4,8 @@
 
 export function forSpeech(text: string): string {
   return text
+    // A link is shown as a card, never read out.
+    .replace(/https?:\/\/\S+/g, "")
     .replace(/₹\s?([\d,.]+)\s*(lakh|crore)s?\b/gi, "$1 $2 rupees")
     .replace(/₹\s?([\d,.]+)/g, "$1 rupees")
     .replace(/\bsq\.?\s?ft\b/gi, "square feet")

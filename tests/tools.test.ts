@@ -3,6 +3,7 @@ import {
   TOOL_DEFINITIONS,
   calculatePayment,
   createBooking,
+  findAdjacentPlots,
   getKnowledge,
   listPlots,
   runTool,
@@ -13,10 +14,11 @@ import {
 import { getPlots } from "@/lib/inventory";
 
 describe("tool definitions", () => {
-  it("has exactly seven strict tools", () => {
+  it("has exactly eight strict tools", () => {
     expect(TOOL_DEFINITIONS.map((t) => t.function.name)).toEqual([
       "search_projects",
       "list_plots",
+      "find_adjacent_plots",
       "compare_plots",
       "get_knowledge",
       "calculate_payment",
@@ -212,5 +214,21 @@ describe("day 1 tuning", () => {
     const text = getKnowledge({ project_id: "anjarle", topic: "connectivity" }).chunks[0].text;
     expect(text).toMatch(/Mumbai 225 km/);
     expect(getKnowledge({ project_id: null, topic: "connectivity" }).chunks).toHaveLength(3);
+  });
+});
+
+describe("find_adjacent_plots", () => {
+  it("returns only plots that touch on the grid", () => {
+    const r = findAdjacentPlots({ project_id: "anjarle", count: 3, min_size: null, max_size: null, max_total_price: null });
+    const plots = getPlots("anjarle");
+    expect(r.groups!.length).toBeGreaterThan(0);
+    for (const g of r.groups!) {
+      const cells = g.plots.map((x) => plots.find((p) => p.id === x.id)!);
+      expect(cells.every((c) => c.status === "available")).toBe(true);
+      // connected: every plot touches another in the group
+      for (const c of cells) {
+        expect(cells.some((o) => o !== c && Math.abs(o.gridRow - c.gridRow) + Math.abs(o.gridCol - c.gridCol) === 1)).toBe(true);
+      }
+    }
   });
 });
