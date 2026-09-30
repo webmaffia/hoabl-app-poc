@@ -273,11 +273,17 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   // straight onto a screen, it steps up a level instead.
   const goBack = () => {
     const v = trail.current ?? readTrail();
-    // Skip the advisor page: Back is for app screens, the tile reopens the advisor.
+    // Skip the advisor page (the tile reopens it) and the landing page (its welcome screen is not a place to go Back to).
     let i = v.length - 2;
-    while (i >= 0 && (v[i] === "/agent" || v[i] === pathname)) i--;
-    if (i >= 0) window.history.go(i - (v.length - 1)); // the effect above trims the trail on arrival
-    else {
+    while (i >= 0 && (v[i] === "/agent" || v[i] === "/" || v[i] === pathname)) i--;
+    // Go to the screen by route, not by history offset: the trail outlives the
+    // tab's history, so an offset can overshoot onto the landing page.
+    const trailTarget = v[i];
+    if (i >= 0) {
+      v.length = i; // the effect above re-adds the screen on arrival
+      saveTrail(v);
+      router.replace(trailTarget);
+    } else {
       const up = parentOf(pathname);
       if (up !== "/agent") router.push(up); // nothing earlier: stay, never open the advisor
     }
