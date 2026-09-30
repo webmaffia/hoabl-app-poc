@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectVideo } from "@/lib/inventory";
 import { avatar } from "@/lib/avatar/controller";
+import { useSession } from "@/lib/store";
 import { PlayIcon } from "@/components/icons";
 import { FramePortal } from "@/components/journey/FramePortal";
 
@@ -32,6 +33,7 @@ export function FilmStrip({
   poster,
   onFinished,
   startDone = false,
+  returnLine,
 }: {
   projectName: string;
   videos: ProjectVideo[];
@@ -40,6 +42,8 @@ export function FilmStrip({
   onFinished: () => void;
   /** The customer has already had the tour: open on the hero, not full screen. */
   startDone?: boolean;
+  /** Said when the page opens on the hero because the tour was already seen. */
+  returnLine?: string;
 }) {
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState(startDone);
@@ -109,9 +113,14 @@ export function FilmStrip({
   useEffect(() => () => avatar.interrupt(), []);
 
   // Once the tour has started it counts as seen, so leaving and coming back
-  // (maximising the advisor, say) doesn't replay it full screen.
+  // (maximising the advisor, say) doesn't replay it full screen. On the way
+  // back the advisor still speaks, so the page never sits silent.
   useEffect(() => {
     if (!startDone) onFinished();
+    else if (returnLine && !useSession.getState().busy && !useSession.getState().onboarding) {
+      avatar.interrupt();
+      avatar.speak(returnLine);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

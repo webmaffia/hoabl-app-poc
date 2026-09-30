@@ -96,6 +96,22 @@ export function screenCue(path: string, s: CueState): ScreenCue {
   return { interrupt: true, line: null };
 }
 
+/**
+ * What the Land Advisor says when the customer comes back to a project page
+ * they've already had the tour of (Back from the map, say). Built from app
+ * data; it moves them toward the plots and invites a question.
+ */
+export function projectReturnLine(name: string, available: number, total: number, entryRupees: number, firstName: string | null): string {
+  const scarcity =
+    available === 0
+      ? "Every plot here is taken right now, but I can tell you about a similar project."
+      : available <= 5
+        ? `Only ${available} of ${total} plots are still available, so they won't last long.`
+        : `${available} of ${total} plots are still available.`;
+  const cta = available === 0 ? "Want me to show you the alternatives?" : "Shall I take you to the plot map so you can pick yours, or is there anything you'd like to ask first?";
+  return `Welcome back${firstName ? `, ${firstName}` : ""}. ${name} starts from ${spokenLakh(entryRupees)}. ${scarcity} ${cta}`;
+}
+
 /** What the Land Advisor says when the customer taps a plot on the map. */
 export function plotLine(plotId: string, overrides: PlotOverrides = {}): string | null {
   const plot: Plot | undefined = findPlot(plotId, overrides);

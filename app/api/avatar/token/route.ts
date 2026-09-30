@@ -33,9 +33,10 @@ export async function POST() {
       },
       video_settings: { quality: "high", encoding: "H264" },
       interactivity_type: "CONVERSATIONAL",
-      // Sandbox caps sessions at 60s; otherwise cap at 20 minutes so an
-      // abandoned tab can't burn credits.
-      max_session_duration: sandbox ? 60 : 1200,
+      // Sandbox caps sessions at 60s; otherwise use the account's maximum
+      // (LiveAvatar rejects anything above 120s) so an abandoned tab can't
+      // burn credits.
+      max_session_duration: sandbox ? 60 : 120,
     }),
   });
 

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
 import { avatar } from "@/lib/avatar/controller";
+import { projectReturnLine } from "@/lib/avatar/screen-lines";
 import { entryTicket, getPlots, getProject, PROJECTS } from "@/lib/inventory";
 import { lookupKnowledge } from "@/lib/knowledge";
 import { lakh } from "@/lib/journey";
@@ -38,7 +39,7 @@ export default function ProjectDetail() {
   const [viewer, setViewer] = useState<{ images: LightboxImage[]; start: number } | null>(null);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { overrides, lastSearch, requestHuman, markIntroSeen, introSeen } = useSession();
+  const { overrides, lastSearch, requestHuman, markIntroSeen, introSeen, profile } = useSession();
   const project = getProject(id);
   // The advisor asked for the map: scroll to it once the page has settled at the top.
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function ProjectDetail() {
           videos={films}
           poster={project.image ?? films[0].poster}
           startDone={introSeen.includes(project.id)}
+          returnLine={projectReturnLine(project.name, available, plots.length, entryTicket(project), profile.name?.split(" ")[0] ?? null)}
           onFinished={() => markIntroSeen(project.id)}
         />
       ) : (
