@@ -203,7 +203,8 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     const lastTurn = s.metrics[s.metrics.length - 1];
     const askedJustNow = s.busy && lastTurn && Date.now() - lastTurn.startedAt < 1500;
     if (pathname !== "/agent" && s.busy && !askedJustNow) s.abort();
-    if (!askedJustNow) {
+    // The finding screen's narration must finish first; it would be cut off by the new screen's line.
+    if (!askedJustNow && s.findingSince == null) {
       if (cue.interrupt) avatar.interrupt();
       if (cue.line && !s.onboarding) avatar.speak(cue.line);
     }
