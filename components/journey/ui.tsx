@@ -1,5 +1,6 @@
 // Shared building blocks for the journey screens.
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 export function ScreenTitle({ eyebrow, title, sub, right }: { eyebrow?: string; title: string; sub?: ReactNode; right?: ReactNode }) {
@@ -44,36 +45,58 @@ export function SandboxTag({ label = "Sandbox" }: { label?: string }) {
   );
 }
 
+/**
+ * The one CTA style for every screen: gold gradient primary, dark bordered
+ * secondary. Pass `href` to render a link with the same look. Use `size="sm"`
+ * only for buttons tucked inside chat bubbles.
+ */
 export function Button({
   children,
   onClick,
+  href,
   variant = "primary",
+  size = "md",
   disabled,
   type = "button",
   className = "",
 }: {
   children: ReactNode;
   onClick?: () => void;
+  href?: string;
   variant?: "primary" | "secondary" | "gold";
+  size?: "md" | "sm";
   disabled?: boolean;
   type?: "button" | "submit";
   className?: string;
 }) {
   const styles = {
     primary: "bg-gold text-site",
-    secondary: "border border-line bg-card text-ink",
+    secondary: "border border-white/35 bg-white/15 text-white backdrop-blur-md active:bg-white/25",
     gold: "bg-gold text-site",
   }[variant];
+  const sizing = size === "sm" ? "h-9 rounded-lg px-3 text-[12.5px]" : "h-12 rounded-xl px-4 text-[14.5px]";
+  const cls = `flex items-center justify-center gap-2 font-semibold transition active:scale-[0.99] disabled:opacity-40 ${sizing} ${styles} ${className}`;
+  if (href) {
+    return (
+      <Link href={href} className={cls}>
+        {children}
+      </Link>
+    );
+  }
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-[14.5px] font-semibold transition active:scale-[0.99] disabled:opacity-40 ${styles} ${className}`}
-    >
+    <button type={type} onClick={onClick} disabled={disabled} className={cls}>
       {children}
     </button>
   );
+}
+
+/**
+ * Pins a screen's CTAs to the bottom of the scroll area. Put it last in the
+ * screen, and give the screen's root `flex min-h-full flex-col` so it also
+ * sits at the bottom when the content is short.
+ */
+export function StickyBar({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`sticky bottom-0 z-10 mt-auto flex shrink-0 flex-col gap-2 bg-paper/85 px-4 pb-3 pt-4 backdrop-blur ${className}`}>{children}</div>;
 }
 
 export function Badge({ children, tone = "verd" }: { children: ReactNode; tone?: "verd" | "gold" | "muted" }) {

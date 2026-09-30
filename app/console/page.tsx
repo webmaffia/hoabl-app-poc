@@ -8,7 +8,7 @@
 // every change, and the console also reads the last snapshot on load.
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { Button } from "@/components/journey/ui";
 import { INTENTS, type Intent } from "@/lib/agent/prompt";
 import { LIVE_CHANNEL, LIVE_KEY, type LiveSnapshot } from "@/lib/store";
 import { VIEW_LABEL, inr, lakh, type View } from "@/lib/journey";
@@ -75,9 +75,7 @@ export default function Console() {
         <p className="max-w-md text-[14px] text-ink-soft">
           Start a conversation in another tab of this browser and it will appear here as it happens.
         </p>
-        <Link href="/" className="rounded-xl bg-gold px-4 py-2.5 text-[14px] font-semibold text-site">
-          Open the app
-        </Link>
+        <Button href="/">Open the app</Button>
       </main>
     );
   }

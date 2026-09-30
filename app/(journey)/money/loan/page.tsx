@@ -8,7 +8,7 @@ import { useSession } from "@/lib/store";
 import { findPlot, getPlots } from "@/lib/inventory";
 import { BANDS, TENURE_YEARS, eligibility, type BandId } from "@/lib/loan";
 import { dateIn, inr, lakh } from "@/lib/journey";
-import { Button, Card, Disclosure, Field, SandboxTag, ScreenTitle, Section, inputClass } from "@/components/journey/ui";
+import { Button, Card, Disclosure, Field, SandboxTag, ScreenTitle, Section, StickyBar, inputClass } from "@/components/journey/ui";
 
 const STAGES = ["Sharing your KYC with the partner bank…", "Running a soft credit check…", "Preparing your in-principle letter…"];
 
@@ -92,7 +92,7 @@ export default function Loan() {
   }
 
   return (
-    <div>
+    <div className="flex min-h-full flex-col">
       <ScreenTitle eyebrow={booking ? `${booking.plot_no} · ${lakh(price)}` : `Plot value ${lakh(price)}`} title="Loan eligibility" sub="An in-principle estimate from partner banks." right={<SandboxTag />} />
 
       <div className="mt-4 space-y-4 px-4">
@@ -159,7 +159,12 @@ export default function Loan() {
         )}
       </Card>
 
-      <div className="mt-4 px-4">
+      <Disclosure>
+        In-principle estimate only. It isn&rsquo;t an offer of credit. Rates are indicative by credit band, and final terms depend on the
+        bank&rsquo;s assessment. {employment === "Self-employed" ? "Self-employed applicants usually need 2 years of ITR." : ""}
+      </Disclosure>
+
+      <StickyBar>
         {stage !== null ? (
           <Card className="px-4 py-4">
             <div className="h-1.5 overflow-hidden rounded-full bg-line">
@@ -169,16 +174,11 @@ export default function Loan() {
             <p className="text-[12px] text-ink-soft">Sandbox: no bank or bureau is contacted.</p>
           </Card>
         ) : (
-          <Button className="w-full" disabled={!ready || e.eligible === 0} onClick={apply}>
+          <Button disabled={!ready || e.eligible === 0} onClick={apply}>
             Get in-principle sanction · sandbox
           </Button>
         )}
-      </div>
-
-      <Disclosure>
-        In-principle estimate only. It isn&rsquo;t an offer of credit. Rates are indicative by credit band, and final terms depend on the
-        bank&rsquo;s assessment. {employment === "Self-employed" ? "Self-employed applicants usually need 2 years of ITR." : ""}
-      </Disclosure>
+      </StickyBar>
     </div>
   );
 }

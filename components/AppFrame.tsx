@@ -9,9 +9,11 @@ import { DemoReset } from "@/components/DemoReset";
 export function AppFrame({ children }: { children: ReactNode }) {
   const wide = usePathname().startsWith("/console");
   return (
-    <div className={`app-shell ${wide ? "app-shell--wide" : ""}`}>
-      <div className="app-scroll">{children}</div>
+    <>
+      <div className={`app-shell ${wide ? "app-shell--wide" : ""}`}>
+        <div className="app-scroll">{children}</div>
+      </div>
       {!wide && <DemoReset />}
-    </div>
+    </>
   );
 }

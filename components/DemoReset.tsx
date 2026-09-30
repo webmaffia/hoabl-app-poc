@@ -14,7 +14,9 @@ export function DemoReset() {
   const [confirming, setConfirming] = useState(false);
 
   return (
-    <div className="pointer-events-none fixed bottom-3 left-3 z-50">
+    // Rendered outside the phone frame so it never covers the composer: beside
+    // the frame on desktop, on the top edge (status-bar area) on a real phone.
+    <div className="pointer-events-none fixed right-1/2 top-1 z-50 translate-x-1/2 min-[560px]:bottom-3 min-[560px]:right-[calc(50%+214px+22px)] min-[560px]:top-auto min-[560px]:translate-x-0">
       {confirming ? (
         <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-black/80 py-1.5 pl-3 pr-1.5 shadow-lg backdrop-blur">
           <span className="text-[11px] font-medium text-white/80">Reset demo?</span>

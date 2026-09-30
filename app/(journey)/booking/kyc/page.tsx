@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
 import { yearsSince } from "@/lib/journey";
-import { Button, Card, Field, SandboxTag, ScreenTitle, Steps, inputClass } from "@/components/journey/ui";
+import { Button, Card, Field, SandboxTag, ScreenTitle, Steps, StickyBar, inputClass } from "@/components/journey/ui";
 
 const PAN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 type Step = "pan" | "aadhaar" | "address" | "liveness" | "done";
@@ -56,25 +56,23 @@ export default function Kyc() {
   // KYC follows the token payment: send the customer back to pay first.
   if (booking?.status !== "paid" && !kyc) {
     return (
-      <div>
+      <div className="flex min-h-full flex-col">
         <ScreenTitle eyebrow="Verify your identity" title="Pay the token first" sub="KYC opens once your token payment is done." />
-        <div className="mt-5 px-4">
-          <Button className="w-full" onClick={() => router.push("/booking")}>
-            Go to booking
-          </Button>
-        </div>
+        <StickyBar>
+          <Button onClick={() => router.push("/booking")}>Go to booking</Button>
+        </StickyBar>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="flex min-h-full flex-col">
       <ScreenTitle eyebrow="Verify your identity" title={step === "done" ? "KYC complete" : "Quick KYC"} sub="Takes about two minutes." right={<SandboxTag />} />
       <Steps current={idx + 1} total={ORDER.length} />
 
       {step === "pan" && (
         <form
-          className="mt-5 space-y-4 px-4"
+          className="mt-5 flex flex-1 flex-col gap-4 px-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (panOk && dobOk && name.trim().length > 1) setStep("aadhaar");
@@ -95,14 +93,16 @@ export default function Kyc() {
           <Field label="Date of birth" error={dob && !dobOk ? "You need to be 18 or older." : null}>
             <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className={inputClass} />
           </Field>
-          <Button type="submit" className="w-full" disabled={!panOk || !dobOk || name.trim().length < 2}>
-            Continue
-          </Button>
+          <StickyBar className="-mx-4">
+            <Button type="submit" disabled={!panOk || !dobOk || name.trim().length < 2}>
+              Continue
+            </Button>
+          </StickyBar>
         </form>
       )}
 
       {step === "aadhaar" && (
-        <div className="mt-5 px-4">
+        <div className="mt-5 flex flex-1 flex-col px-4">
           <Card className="px-4 py-4">
             <div className="text-[15px] font-semibold">Aadhaar e-KYC via DigiLocker</div>
             <p className="mt-1.5 text-[13px] leading-relaxed text-ink-soft">
@@ -113,25 +113,26 @@ export default function Kyc() {
               I consent to HoABL fetching my Aadhaar e-KYC details from DigiLocker for this booking.
             </label>
           </Card>
-          <Button
-            className="mt-4 w-full"
-            disabled={!consent || fetching}
-            onClick={() => {
-              setFetching(true);
-              setTimeout(() => {
-                setFetching(false);
-                setStep("address");
-              }, 1500);
-            }}
-          >
-            {fetching ? "Connecting to DigiLocker…" : "Continue with DigiLocker · simulated"}
-          </Button>
+          <StickyBar className="-mx-4">
+            <Button
+              disabled={!consent || fetching}
+              onClick={() => {
+                setFetching(true);
+                setTimeout(() => {
+                  setFetching(false);
+                  setStep("address");
+                }, 1500);
+              }}
+            >
+              {fetching ? "Connecting to DigiLocker…" : "Continue with DigiLocker · simulated"}
+            </Button>
+          </StickyBar>
         </div>
       )}
 
       {step === "address" && (
         <form
-          className="mt-5 space-y-4 px-4"
+          className="mt-5 flex flex-1 flex-col gap-4 px-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (line.trim().length > 4 && /^\d{6}$/.test(pin)) setStep("liveness");
@@ -149,9 +150,11 @@ export default function Kyc() {
               <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" className={inputClass} autoComplete="postal-code" />
             </Field>
           </div>
-          <Button type="submit" className="w-full" disabled={line.trim().length < 5 || !/^\d{6}$/.test(pin)}>
-            Continue to selfie check
-          </Button>
+          <StickyBar className="-mx-4">
+            <Button type="submit" disabled={line.trim().length < 5 || !/^\d{6}$/.test(pin)}>
+              Continue to selfie check
+            </Button>
+          </StickyBar>
         </form>
       )}
 
@@ -170,7 +173,7 @@ export default function Kyc() {
       )}
 
       {step === "done" && (
-        <div className="mt-5 px-4">
+        <div className="mt-5 flex flex-1 flex-col px-4">
           <Card className="divide-y divide-line">
             {[
               ["PAN", kyc?.panMasked ?? "Verified"],
@@ -188,13 +191,13 @@ export default function Kyc() {
               </div>
             ))}
           </Card>
-          <Button className="mt-4 w-full" onClick={() => router.push("/booking/plan")}>
-            Continue to payment plan
-          </Button>
-          <Button variant="secondary" className="mt-2 w-full" onClick={() => router.push("/money/loan")}>
-            Check loan eligibility
-          </Button>
           <p className="mt-3 text-center text-[11.5px] text-ink-soft">Sandbox verdict. No identity documents were checked.</p>
+          <StickyBar className="-mx-4">
+            <Button onClick={() => router.push("/booking/plan")}>Continue to payment plan</Button>
+            <Button variant="secondary" onClick={() => router.push("/money/loan")}>
+              Check loan eligibility
+            </Button>
+          </StickyBar>
         </div>
       )}
     </div>

@@ -33,6 +33,7 @@ import { FindingOverlay } from "@/components/journey/FindingOverlay";
 // buyers usually ask about a project.
 const SHOW_PLOTS = "Take me to the plots";
 const BOOK_PLOT = "Book this plot";
+const WORK_OUT_EMI = "Work out EMI";
 
 const TRAIL_KEY = "hoabl-trail";
 
@@ -69,6 +70,7 @@ function parentOf(path: string): string {
 }
 const PROJECT_NEXT_STEPS = [
   SHOW_PLOTS,
+  WORK_OUT_EMI,
   "What's the price range?",
   "Is it RERA registered?",
   "When is possession?",
@@ -212,6 +214,9 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   const last = turns[turns.length - 1];
   // On the property page the chips are the next steps, led by the plot map.
   const onProject = onScreen && screen?.view === "project";
+  // Screens with a pinned CTA bar: the avatar tile lifts above it and the page needs no bottom padding.
+  const pinnedBar =
+    onProject || (onScreen && (screen?.view === "calculator" || screen?.view === "booking" || screen?.view === "kyc" || screen?.view === "loan" || screen?.view === "plan"));
   // Screens that speak for themselves: no Land Advisor strip with its latest line.
   const hideDock =
     onProject || (onScreen && (screen?.view === "recommendations" || screen?.view === "plots" || screen?.view === "plot" || screen?.view === "booking" || screen?.view === "kyc" || screen?.view === "loan" || screen?.view === "plan"));
@@ -249,7 +254,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     : onProject
     ? PROJECT_NEXT_STEPS
     : bookable
-      ? [BOOK_PLOT, ...agentChips.filter((c) => !/book/i.test(c))].slice(0, 4)
+      ? [BOOK_PLOT, WORK_OUT_EMI, ...agentChips.filter((c) => !/book|emi/i.test(c))].slice(0, 4)
       : agentChips;
   const lastAgent = [...turns].reverse().find((t) => t.kind === "agent");
   const running = [...turns].reverse().find((t) => t.kind === "tool" && !t.tool.pill);
@@ -292,6 +297,8 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     // The lead next step opens the plot map right away; the Land Advisor then
     // talks the customer through it.
     if (onProject && text === SHOW_PLOTS && screen?.id) router.push(`/plots/${screen.id}/map`);
+    // Straight to the calculator; it picks a plot itself if none is chosen.
+    if ((onProject || bookable) && text === WORK_OUT_EMI) return void router.push("/money/calculator");
     // Name the plot, so the Land Advisor books the one on screen.
     if (text === BOOK_PLOT && picked) return void send(`Book plot ${picked.plotNo} for me.`);
     void send(text);
@@ -345,7 +352,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
       )}
 
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <AvatarStage pip={onScreen} lift={onProject} onExpand={toAdvisor} />
+        <AvatarStage pip={onScreen} lift={pinnedBar} onExpand={toAdvisor} />
 
         {immersive ? (
           <LiveOverlay
@@ -362,7 +369,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
           />
         ) : onScreen ? (
           // Bottom padding keeps the end of every screen clear of the avatar tile.
-          <div ref={content} className={`min-h-0 flex-1 overflow-y-auto ${onProject ? "" : "pb-36"}`}>
+          <div ref={content} className={`min-h-0 flex-1 overflow-y-auto ${pinnedBar ? "" : "pb-36"}`}>
             {children}
           </div>
         ) : (

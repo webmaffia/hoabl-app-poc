@@ -3,7 +3,7 @@
 // Plot map: every plot in the layout, coloured by status. Sold plots stay
 // visible, because scarcity is part of the pitch. Tap a plot for its details.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
 import { getPlots, getProject, type Plot } from "@/lib/inventory";
@@ -16,12 +16,22 @@ import { plotLine } from "@/lib/avatar/screen-lines";
 export default function PlotMap() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { overrides, selectedPlot, selectPlot, send, profile, booking, setBooking } = useSession();
+  const { overrides, selectedPlot, selectPlot, profile, booking, setBooking } = useSession();
   const project = getProject(id);
   const plots = useMemo(() => (project ? getPlots(project.id, overrides) : []), [project, overrides]);
   const prices = plots.map((p) => p.price);
   const [size, setSize] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  // Which plot's popup is open. A plot picked earlier doesn't reopen it on arrival; a new pick does.
+  const [openFor, setOpenFor] = useState<string | null>(null);
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    setOpenFor(selectedPlot);
+  }, [selectedPlot]);
 
   if (!project) return <p className="p-6 text-ink-soft">Project not found.</p>;
 
@@ -102,6 +112,7 @@ export default function PlotMap() {
                     .map((p) => (
                       <PlotCell key={p.id} plot={p} dim={!matches(p)} selected={p.id === selectedPlot} mine={booking?.plot_id === p.id} onClick={() => {
                           selectPlot(p.id);
+                          setOpenFor(p.id);
                           // The Land Advisor reads out what the customer just tapped.
                           const line = plotLine(p.id, overrides);
                           if (line) {
@@ -129,9 +140,21 @@ export default function PlotMap() {
         </div>
       </div>
 
-      {selected && (
-        <Card className="mx-4 mt-3 px-4 py-3.5">
-          <div className="flex items-start justify-between gap-2">
+      {selected && openFor === selected.id && (
+        // Fixed inside the phone frame (the shell is the containing block), so it sits over the dock and composer.
+        <div className="fixed inset-0 z-[60] flex items-center" role="dialog" aria-label={`Plot ${selected.plotNo}`}>
+        <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" onClick={() => setOpenFor(null)} aria-label="Close" />
+        <Card className="relative mx-4 w-full px-4 py-3.5 shadow-2xl">
+          <button
+            onClick={() => setOpenFor(null)}
+            aria-label="Close"
+            className="absolute -top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-ink"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <div className="flex items-start justify-between gap-2 pr-0">
             <div>
               <div className="font-display text-[22px] font-semibold tracking-tight">{selected.plotNo}</div>
               <div className="mt-0.5 flex flex-wrap gap-1.5">
@@ -180,12 +203,10 @@ export default function PlotMap() {
               {booking?.plot_id === selected.id ? "Go to booking" : "Book this plot"}
             </Button>
           </div>
-          <button onClick={() => void send(`Tell me about plot ${selected.plotNo}.`)} className="mt-2 w-full py-1.5 text-[13px] font-semibold text-verd">
-            Ask the advisor about {selected.plotNo}
-          </button>
         </Card>
+        </div>
       )}
-      {!selected && <p className="mt-3 px-4 text-center text-[12.5px] text-ink-soft">Tap a plot to see its details.</p>}
+      <p className="mt-3 px-4 pb-4 text-center text-[12.5px] text-ink-soft">Tap a plot to see its details.</p>
     </div>
   );
 }

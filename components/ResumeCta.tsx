@@ -4,12 +4,12 @@
 // in localStorage, so instead of sending them through registration again,
 // this lands them back on the screen they last had open.
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/store";
 import { routeFor } from "@/lib/journey";
 import { ArrowIcon } from "@/components/icons";
+import { Button } from "@/components/journey/ui";
 
 export function ResumeCta() {
   const router = useRouter();
@@ -26,13 +26,10 @@ export function ResumeCta() {
 
   return (
     <>
-      <Link
-        href={resume?.href ?? "/register"}
-        className="flex h-14 w-full items-center justify-between rounded-2xl bg-gold px-5 text-[16px] font-semibold text-site shadow-lg transition active:scale-[0.99]"
-      >
+      <Button href={resume?.href ?? "/register"} className="w-full">
         {resume?.label ?? "Get Started"}
         <ArrowIcon className="h-5 w-5" />
-      </Link>
+      </Button>
       {resume && (
         <button
           onClick={() => {

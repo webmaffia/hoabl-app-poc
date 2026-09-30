@@ -10,7 +10,7 @@ import { calculatePayment } from "@/lib/agent/tools";
 import { findPlot, getPlots, type Plot } from "@/lib/inventory";
 import { INDICATIVE_RATE, TOKEN_AMOUNT } from "@/lib/knowledge";
 import { inr, lakh, sqft } from "@/lib/journey";
-import { Button, Card, Disclosure, ScreenTitle, Section } from "@/components/journey/ui";
+import { Button, Card, Disclosure, ScreenTitle, Section, StickyBar } from "@/components/journey/ui";
 
 export default function Calculator() {
   const { selectedPlot, booking, overrides } = useSession();
@@ -40,7 +40,7 @@ function CalculatorFor({ plot }: { plot: Plot }) {
   ];
 
   return (
-    <div>
+    <div className="flex min-h-full flex-col">
       <ScreenTitle eyebrow={`Plot ${plot.plotNo} · ${sqft(plot.sizeSqft)}`} title="What it costs you" sub="Move the sliders to see what fits." />
 
       <Card className="mx-4 mt-4 overflow-hidden">
@@ -86,7 +86,12 @@ function CalculatorFor({ plot }: { plot: Plot }) {
         </Card>
       </Section>
 
-      <div className="mt-5 grid grid-cols-2 gap-2 px-4">
+      <Disclosure>
+        EMI figures are indicative. Loans are in-principle until a partner bank sanctions them after its own checks and property
+        valuation. The indicative rate is {INDICATIVE_RATE}% a year.
+      </Disclosure>
+
+      <StickyBar className="grid grid-cols-2">
         <Button variant="secondary" onClick={() => router.push("/money/loan")}>
           Check loan eligibility
         </Button>
@@ -96,12 +101,7 @@ function CalculatorFor({ plot }: { plot: Plot }) {
         >
           {booking?.plot_id === plot.id ? "Go to booking" : "Book this plot"}
         </Button>
-      </div>
-
-      <Disclosure>
-        EMI figures are indicative. Loans are in-principle until a partner bank sanctions them after its own checks and property
-        valuation. The indicative rate is {INDICATIVE_RATE}% a year.
-      </Disclosure>
+      </StickyBar>
     </div>
   );
 }

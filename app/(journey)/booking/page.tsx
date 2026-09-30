@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { nextPlanStep, useSession, type Booking, type PlanProgress } from "@/lib/store";
 import { findPlot } from "@/lib/inventory";
 import { dateIn, inr, lakh, sqft } from "@/lib/journey";
-import { Button, Card, Disclosure, SandboxTag, ScreenTitle, Section } from "@/components/journey/ui";
+import { Button, Card, Disclosure, SandboxTag, ScreenTitle, Section, StickyBar } from "@/components/journey/ui";
 
 const METHODS = [
   { id: "UPI", label: "UPI", hint: "Any UPI app" },
@@ -31,19 +31,15 @@ export default function BookingPage() {
   if (!booking) {
     const plot = selectedPlot ? findPlot(selectedPlot, overrides) : undefined;
     return (
-      <div>
+      <div className="flex min-h-full flex-col">
         <ScreenTitle eyebrow="Booking" title="No plot on hold yet" sub="Pick a plot on the map, or ask the advisor to hold one for you." />
-        <div className="mt-5 px-4">
+        <StickyBar>
           {plot && plot.status === "available" ? (
-            <Button className="w-full" onClick={() => void send(`I want to book plot ${plot.plotNo}.`)}>
-              Ask the advisor to hold {plot.plotNo}
-            </Button>
+            <Button onClick={() => void send(`I want to book plot ${plot.plotNo}.`)}>Ask the advisor to hold {plot.plotNo}</Button>
           ) : (
-            <Button className="w-full" onClick={() => router.push("/plots/anjarle/map")}>
-              Open the plot map
-            </Button>
+            <Button onClick={() => router.push("/plots/anjarle/map")}>Open the plot map</Button>
           )}
-        </div>
+        </StickyBar>
       </div>
     );
   }
@@ -68,7 +64,7 @@ export default function BookingPage() {
   const paying = stage !== null;
 
   return (
-    <div>
+    <div className="flex min-h-full flex-col">
       <ScreenTitle eyebrow="Booking" title="Confirm your plot" right={<SandboxTag />} />
 
       <Card className="mx-4 mt-4 px-4 py-3.5">
@@ -110,7 +106,9 @@ export default function BookingPage() {
         </div>
       </Section>
 
-      <div className="mt-5 px-4">
+      <Disclosure>Sandbox: this is a simulated payment. No card, UPI or bank details are collected, and no money is charged.</Disclosure>
+
+      <StickyBar>
         {paying ? (
           <Card className="px-4 py-4">
             <div className="h-1.5 overflow-hidden rounded-full bg-line">
@@ -120,13 +118,11 @@ export default function BookingPage() {
             <p className="text-[12px] text-ink-soft">Sandbox payment. No money moves.</p>
           </Card>
         ) : (
-          <Button variant="gold" className="w-full" onClick={pay}>
+          <Button variant="gold" onClick={pay}>
             Pay {inr(booking.token_amount)} · sandbox
           </Button>
         )}
-      </div>
-
-      <Disclosure>Sandbox: this is a simulated payment. No card, UPI or bank details are collected, and no money is charged.</Disclosure>
+      </StickyBar>
     </div>
   );
 }
@@ -183,14 +179,14 @@ function Confirmation({ booking, kycDone, plan, onKyc, onPlan }: { booking: Book
                   </div>
                   <div className="text-[12.5px] text-ink-soft">{s.detail}</div>
                   {s.planAction && (
-                    <button onClick={onPlan} className="mt-1.5 rounded-lg bg-gold px-3 py-1.5 text-[12.5px] font-semibold text-site">
+                    <Button size="sm" onClick={onPlan} className="mt-1.5">
                       Continue
-                    </button>
+                    </Button>
                   )}
                   {s.action && (
-                    <button onClick={onKyc} className="mt-1.5 rounded-lg bg-gold px-3 py-1.5 text-[12.5px] font-semibold text-site">
+                    <Button size="sm" onClick={onKyc} className="mt-1.5">
                       Start KYC
-                    </button>
+                    </Button>
                   )}
                 </div>
               </li>

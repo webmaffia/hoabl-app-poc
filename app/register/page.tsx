@@ -11,6 +11,7 @@ import { useSession } from "@/lib/store";
 import { avatar } from "@/lib/avatar/controller";
 import { ArrowIcon, BackIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
+import { Button } from "@/components/journey/ui";
 
 const OTP = "481902";
 const CITIES = ["Mumbai", "Pune", "Thane", "Navi Mumbai", "Bengaluru", "Delhi NCR", "Hyderabad", "Other"];
@@ -121,14 +122,10 @@ export default function Register() {
             </select>
           </label>
 
-          <button
-            type="submit"
-            disabled={!detailsOk}
-            className="mt-auto flex h-14 items-center justify-between rounded-2xl bg-gold px-5 font-semibold text-site transition disabled:opacity-40"
-          >
+          <Button type="submit" disabled={!detailsOk} className="mt-auto">
             Send code
             <ArrowIcon className="h-5 w-5" />
-          </button>
+          </Button>
         </form>
       ) : (
         <form
@@ -177,14 +174,10 @@ export default function Register() {
             Your advisor is getting ready while you verify.
           </p>
 
-          <button
-            type="submit"
-            disabled={code !== OTP}
-            className="mt-auto flex h-14 items-center justify-between rounded-2xl bg-gold px-5 font-semibold text-site transition disabled:opacity-40"
-          >
+          <Button type="submit" disabled={code !== OTP} className="mt-auto">
             Verify and meet your advisor
             <ArrowIcon className="h-5 w-5" />
-          </button>
+          </Button>
         </form>
       )}
     </main>

@@ -9,7 +9,7 @@ import { useSession, type SearchResult } from "@/lib/store";
 import { searchProjects } from "@/lib/agent/tools";
 import { getPlots, getProject, type Purpose } from "@/lib/inventory";
 import { lakh } from "@/lib/journey";
-import { Disclosure } from "@/components/journey/ui";
+import { Button, Disclosure } from "@/components/journey/ui";
 import { Contours, PlotGrid } from "@/components/Contours";
 import { ArrowIcon, PinIcon, SparkleIcon } from "@/components/icons";
 
@@ -99,10 +99,10 @@ function TopPick({ p, onOpen, overrides }: { p: SearchResult; onOpen: () => void
             <div className="text-[11px] font-medium uppercase tracking-wider text-ink-soft">From</div>
             <div className="font-display text-[24px] font-semibold text-gold">{lakh(p.cheapest_in_budget ?? p.entry_ticket)}</div>
           </div>
-          <button onClick={onOpen} className="flex h-12 items-center gap-2 rounded-xl bg-gold px-5 text-[15px] font-semibold text-site active:scale-[0.99]">
+          <Button onClick={onOpen} className="px-5">
             Explore
             <ArrowIcon className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
     </article>

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { nextPlanStep, PLAN_STEPS, useSession, type PlanStep } from "@/lib/store";
 import { dateIn, inr } from "@/lib/journey";
-import { Button, Card, Disclosure, SandboxTag, ScreenTitle, Section } from "@/components/journey/ui";
+import { Button, Card, Disclosure, SandboxTag, ScreenTitle, Section, StickyBar } from "@/components/journey/ui";
 
 const STAGES = ["Connecting to your bank…", "Authorising payment…", "Confirming with the developer…", "Payment received"];
 
@@ -21,25 +21,21 @@ export default function PlanPage() {
 
   if (!booking || booking.status !== "paid") {
     return (
-      <div>
+      <div className="flex min-h-full flex-col">
         <ScreenTitle eyebrow="Payment plan" title="Pay the token first" sub="The payment plan opens once your token is paid and KYC is done." />
-        <div className="mt-5 px-4">
-          <Button className="w-full" onClick={() => router.push("/booking")}>
-            Go to booking
-          </Button>
-        </div>
+        <StickyBar>
+          <Button onClick={() => router.push("/booking")}>Go to booking</Button>
+        </StickyBar>
       </div>
     );
   }
   if (!kyc) {
     return (
-      <div>
+      <div className="flex min-h-full flex-col">
         <ScreenTitle eyebrow="Payment plan" title="Complete KYC first" sub="The payment plan opens once your KYC is verified." />
-        <div className="mt-5 px-4">
-          <Button className="w-full" onClick={() => router.push("/booking/kyc")}>
-            Start KYC
-          </Button>
-        </div>
+        <StickyBar>
+          <Button onClick={() => router.push("/booking/kyc")}>Start KYC</Button>
+        </StickyBar>
       </div>
     );
   }
@@ -84,7 +80,7 @@ export default function PlanPage() {
   ];
 
   return (
-    <div>
+    <div className="flex min-h-full flex-col">
       <ScreenTitle
         eyebrow={`${booking.plot_no} · ${booking.project_name}`}
         title={current ? META[current].title : "Booking complete"}
@@ -112,7 +108,9 @@ export default function PlanPage() {
         </Card>
       </Section>
 
-      <div className="mt-5 px-4">
+      <Disclosure>Sandbox: this is a simulated flow. No payment is taken and no legal document is issued.</Disclosure>
+
+      <StickyBar>
         {paying ? (
           <Card className="px-4 py-4">
             <div className="h-1.5 overflow-hidden rounded-full bg-line">
@@ -124,7 +122,6 @@ export default function PlanPage() {
         ) : current === "allotment" ? (
           <Button
             variant="gold"
-            className="w-full"
             onClick={() =>
               finish("allotment", `Allotment letter issued · ${booking.booking_id}`, `The allotment letter for plot ${booking.plot_no} at ${booking.project_name} was issued to the customer (simulated).`)
             }
@@ -132,7 +129,7 @@ export default function PlanPage() {
             Get my allotment letter · sandbox
           </Button>
         ) : current ? (
-          <Button variant="gold" className="w-full" onClick={() => payInstalment(current)}>
+          <Button variant="gold" onClick={() => payInstalment(current)}>
             {current === "registration" ? "Pay final" : "Pay"} {META[current].amount} · sandbox
           </Button>
         ) : (
@@ -141,9 +138,7 @@ export default function PlanPage() {
             <p className="mt-1 text-[12.5px] text-ink-soft">Every step is done. This is the end of the booking journey.</p>
           </Card>
         )}
-      </div>
-
-      <Disclosure>Sandbox: this is a simulated flow. No payment is taken and no legal document is issued.</Disclosure>
+      </StickyBar>
     </div>
   );
 }

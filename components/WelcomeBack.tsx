@@ -10,6 +10,7 @@ import { useSession } from "@/lib/store";
 import { routeFor } from "@/lib/journey";
 import { findPlot, getProject } from "@/lib/inventory";
 import { Logo } from "@/components/Logo";
+import { Button } from "@/components/journey/ui";
 
 interface Step {
   label: string;
@@ -86,12 +87,9 @@ export function WelcomeBack() {
         ))}
       </ul>
 
-      <button
-        onClick={() => router.push(summary.href)}
-        className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-gold px-5 text-[16px] font-semibold text-site shadow-lg transition active:scale-[0.99]"
-      >
+      <Button onClick={() => router.push(summary.href)} className="mt-6 w-full">
         Continue where I left off →
-      </button>
+      </Button>
       <button
         onClick={() => {
           useSession.getState().reset();
