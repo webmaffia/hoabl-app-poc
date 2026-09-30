@@ -93,7 +93,7 @@ export function JourneyShell({ children }: { children: ReactNode }) {
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const { turns, busy, error, profile, send, requestHuman, screen, screenSeq, selectedPlot, overrides, onboarding, booking, kyc, plan } = useSession();
   const { mode, note, liveEnabled } = useAvatar();
-  const [showPills, setShowPills] = useState(readPills);
+  const showPills = true; // the toggle is gone: the advisor's checks always show
   const greeted = useRef(false);
   const lastSeq = useRef(screenSeq);
   /**
@@ -291,15 +291,6 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     void send(text);
   };
 
-  const togglePills = () => {
-    setShowPills((v) => {
-      try {
-        localStorage.setItem("hoabl-pills", v ? "off" : "on");
-      } catch {}
-      return !v;
-    });
-  };
-
   return (
     // Any touch counts as activity: reopen a paused avatar before they speak.
     <main className={`relative flex h-full flex-col ${immersive ? "bg-site" : ""}`} onPointerDown={() => avatar.wake()}>
@@ -322,11 +313,6 @@ export function JourneyShell({ children }: { children: ReactNode }) {
                   </>
                 )}
               </div>
-              {!onProject && (
-                <button onClick={togglePills} className="text-[11px] text-ink-soft">
-                  {showPills ? "Hide" : "Show"} what the advisor is checking
-                </button>
-              )}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -418,14 +404,6 @@ function FallbackNote({ note, liveEnabled }: { note: string; liveEnabled: boolea
       </span>
     </div>
   );
-}
-
-function readPills(): boolean {
-  try {
-    return typeof window === "undefined" || localStorage.getItem("hoabl-pills") !== "off";
-  } catch {
-    return true;
-  }
 }
 
 function lastUserText(turns: ReturnType<typeof useSession.getState>["turns"]): string | null {
