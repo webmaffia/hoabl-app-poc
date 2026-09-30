@@ -4,7 +4,7 @@
 
 import { findPlot } from "@/lib/inventory";
 
-export type View = "recommendations" | "project" | "plots" | "plot" | "calculator" | "booking" | "kyc" | "loan" | "plan";
+export type View = "recommendations" | "project" | "location" | "plots" | "plot" | "calculator" | "booking" | "kyc" | "loan" | "plan";
 
 export interface Screen {
   view: View;
@@ -14,6 +14,7 @@ export interface Screen {
 export const VIEW_LABEL: Record<View, string> = {
   recommendations: "Recommendations",
   project: "Project details",
+  location: "Site location",
   plots: "Plot map",
   plot: "Plot details",
   calculator: "Payment calculator",
@@ -28,6 +29,8 @@ export function routeFor(screen: Screen): string {
     case "recommendations":
       return "/plots";
     case "project":
+      return `/plots/${screen.id ?? "anjarle"}`;
+    case "location":
       return `/plots/${screen.id ?? "anjarle"}`;
     case "plots":
       return `/plots/${screen.id ?? "anjarle"}/map`;

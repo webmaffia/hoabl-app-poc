@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { usePathname, useRouter } from "next/navigation";
 import { nextPlanStep, useSession } from "@/lib/store";
 import { avatar, useAvatar } from "@/lib/avatar/controller";
+import { flushScroll, requestScroll } from "@/lib/maps";
 import { routeFor, screenFromPath, VIEW_LABEL, type View } from "@/lib/journey";
 import { findPlot } from "@/lib/inventory";
 import { AvatarStage } from "@/components/agent/AvatarStage";
@@ -140,10 +141,11 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     lastSeq.current = screenSeq;
     if (!screen) return;
     const target = routeFor(screen);
+    if (screen.view === "location") requestScroll("location");
     if (target !== pathname) {
       agentNav.current = target;
       router.push(target);
-    }
+    } else flushScroll();
   }, [screenSeq, screen, pathname, router]);
 
   useEffect(() => {

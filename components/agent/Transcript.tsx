@@ -3,9 +3,11 @@
 import { useEffect, useRef } from "react";
 import type { Turn } from "@/lib/store";
 import { VIEW_LABEL, type View } from "@/lib/journey";
+import { SITE_MAPS } from "@/lib/maps";
 import { CheckIcon, ScreenIcon } from "@/components/icons";
 
 const URL_RE = /(https?:\/\/\S+?)(?=[.,;:!?)]*(?:\s|$))/g;
+
 
 /** Agent text, with a link shown as a tappable card (map pin for Google Maps). */
 function AgentText({ text }: { text: string }) {
@@ -16,20 +18,31 @@ function AgentText({ text }: { text: string }) {
         if (i % 2 === 0) return part ? <span key={i} className="whitespace-pre-wrap">{part}</span> : null;
         const isMap = /maps\.app\.goo\.gl|google\.[a-z.]+\/maps/.test(part);
         return (
-          <a
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="my-1.5 flex items-center gap-2.5 rounded-xl border border-line bg-verd-soft px-3 py-2.5 text-[13.5px] font-semibold text-verd no-underline"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" />
-              <circle cx="12" cy="9.5" r="2.5" />
-            </svg>
-            <span className="flex-1">{isMap ? "Open site location in Google Maps" : "Open link"}</span>
-            <span aria-hidden>↗</span>
-          </a>
+          <span key={i} className="my-1.5 block overflow-hidden rounded-xl border border-line bg-card">
+            {isMap && (
+              <iframe
+                title="Site location map"
+                src={SITE_MAPS.anjarle.embed}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="block h-44 w-full border-0"
+              />
+            )}
+            <a
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2.5 bg-verd-soft px-3 py-2.5 text-[13.5px] font-semibold text-verd no-underline"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" />
+                <circle cx="12" cy="9.5" r="2.5" />
+              </svg>
+              <span className="flex-1">{isMap ? "Open in Google Maps" : "Open link"}</span>
+              <span aria-hidden>↗</span>
+            </a>
+          </span>
         );
       })}
     </>

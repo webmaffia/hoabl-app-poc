@@ -13,9 +13,10 @@ import {
   type PlotOverrides,
   type Purpose,
 } from "@/lib/inventory";
+import { SITE_MAPS } from "@/lib/maps";
 import { INDICATIVE_RATE, TOKEN_AMOUNT, TOPICS, lookupKnowledge, type Topic } from "@/lib/knowledge";
 
-export const VIEWS = ["recommendations", "project", "plots", "plot", "calculator", "booking", "kyc", "loan", "plan"] as const;
+export const VIEWS = ["recommendations", "project", "location", "plots", "plot", "calculator", "booking", "kyc", "loan", "plan"] as const;
 export type View = (typeof VIEWS)[number];
 
 const PURPOSES: Purpose[] = ["investment", "holiday_home", "self_use", "rental_income", "commercial"];
@@ -99,10 +100,10 @@ export const TOOL_DEFINITIONS: ChatCompletionFunctionTool[] = [
   ),
   fn(
     "show",
-    "Change the customer's screen. Call right after recommending (view 'recommendations'), when discussing one project ('project' or 'plots' with the project id), one plot ('plot' with the plot id), money ('calculator'), or when moving to booking, KYC or loan.",
+    "Change the customer's screen. Call right after recommending (view 'recommendations'), when discussing one project ('project' or 'plots' with the project id), when the customer asks where the site is or wants to visit it ('location' with the project id: opens the project page scrolled to its embedded map), one plot ('plot' with the plot id), money ('calculator'), or when moving to booking, KYC or loan.",
     {
       view: { type: "string", enum: [...VIEWS] },
-      id: nullable({ type: "string", description: "Project id for project/plots, plot id or plot number for plot/calculator/booking." }),
+      id: nullable({ type: "string", description: "Project id for project/location/plots, plot id or plot number for plot/calculator/booking." }),
     },
   ),
   fn(
@@ -433,6 +434,10 @@ export interface ShowArgs {
 
 export function show(args: ShowArgs, ctx: ToolContext = {}) {
   if (!VIEWS.includes(args.view)) return { ok: false, error: `unknown view ${args.view}` };
+  if (args.view === "location") {
+    if (!args.id || !SITE_MAPS[args.id]) return { ok: false, error: "view location needs the id of a project that has a site map (only isle of anjarle does)" };
+    return { ok: true, view: args.view, id: args.id };
+  }
   if (args.view === "project" || args.view === "plots") {
     if (!args.id || !getProject(args.id)) return { ok: false, error: `view ${args.view} needs a valid project id` };
     return { ok: true, view: args.view, id: args.id };

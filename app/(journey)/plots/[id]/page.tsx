@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
@@ -8,6 +8,7 @@ import { avatar } from "@/lib/avatar/controller";
 import { entryTicket, getPlots, getProject, PROJECTS } from "@/lib/inventory";
 import { lookupKnowledge } from "@/lib/knowledge";
 import { lakh } from "@/lib/journey";
+import { SITE_MAPS, flushScroll } from "@/lib/maps";
 import { Badge, Button, Card, Disclosure, Section, Stat } from "@/components/journey/ui";
 import { Contours, PlotGrid } from "@/components/Contours";
 import { FilmStrip } from "@/components/journey/FilmStrip";
@@ -39,6 +40,11 @@ export default function ProjectDetail() {
   const router = useRouter();
   const { overrides, lastSearch, requestHuman, markIntroSeen, introSeen } = useSession();
   const project = getProject(id);
+  // The advisor asked for the map: scroll to it once the page has settled at the top.
+  useEffect(() => {
+    const t = setTimeout(flushScroll, 450);
+    return () => clearTimeout(t);
+  }, [id]);
   if (!project) return <p className="p-6 text-ink-soft">Project not found.</p>;
 
   const films = project.videos ?? [];
@@ -145,6 +151,33 @@ export default function ProjectDetail() {
           </ol>
         </Card>
       </Section>
+
+      {SITE_MAPS[project.id] && (
+        <div id="location" className="scroll-mt-2">
+          <Section title="Site location">
+            <Card className="overflow-hidden">
+              <iframe
+                title={`${project.name} site map`}
+                src={SITE_MAPS[project.id].embed}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="block h-64 w-full border-0"
+              />
+              <a
+                href={SITE_MAPS[project.id].link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3.5 py-2.5 text-[13.5px] font-semibold text-verd"
+              >
+                <PinIcon className="h-4 w-4" />
+                <span className="flex-1">Open in Google Maps</span>
+                <span aria-hidden>↗</span>
+              </a>
+            </Card>
+          </Section>
+        </div>
+      )}
 
       <Section title="What you get">
         <ul className="grid gap-2">
