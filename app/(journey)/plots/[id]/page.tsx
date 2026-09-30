@@ -14,6 +14,7 @@ import { Badge, Button, Card, Disclosure, Section, Stat } from "@/components/jou
 import { Contours, PlotGrid } from "@/components/Contours";
 import { FilmStrip } from "@/components/journey/FilmStrip";
 import { Lightbox, type LightboxImage } from "@/components/journey/Lightbox";
+import { VideoSlider } from "@/components/journey/VideoSlider";
 import { InvestmentForecast } from "@/components/journey/InvestmentForecast";
 import { DownloadIcon, PinIcon } from "@/components/icons";
 
@@ -30,6 +31,12 @@ const AMENITIES: [string, string][] = [
   ["open-gym-and-bird-bath", "Open gym"],
   ["pet-park", "Pet park"],
   ["flower-nursary", "Flower nursery"],
+];
+
+const REELS = [
+  { src: "/projects/anjarle/videos/Amenities.mp4", label: "Amenities" },
+  { src: "/projects/anjarle/videos/connectivity_1.mp4", label: "Connectivity" },
+  { src: "/projects/anjarle/videos/Nearby Attractions_2.mp4", label: "Nearby attractions" },
 ];
 
 const AMENITY_IMAGES: LightboxImage[] = AMENITIES.map(([file, label]) => ({ src: `/projects/anjarle/amenities/${file}.jpg`, label }));
@@ -128,6 +135,12 @@ export default function ProjectDetail() {
             </div>
             <p className="mt-2 text-[13.5px] leading-snug">{project.hook}</p>
           </Card>
+        </Section>
+      )}
+
+      {isAnjarle && (
+        <Section title="Watch and explore">
+          <VideoSlider items={REELS} />
         </Section>
       )}
 
