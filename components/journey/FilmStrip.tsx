@@ -55,18 +55,26 @@ export function FilmStrip({
   const ref = useRef<HTMLVideoElement>(null);
   const flags = useRef({ narrated: false, ended: false });
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const speakTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const video = videos[index];
   const upcoming = videos[index + 1];
+
+  // The avatar drops a line sent right on the heels of an interrupt, so let the
+  // interrupt land first.
+  const speakSoon = useCallback((line: string) => {
+    clearTimeout(speakTimer.current);
+    avatar.interrupt();
+    speakTimer.current = setTimeout(() => avatar.speak(line), 500);
+  }, []);
 
   const finish = useCallback(
     (skipped = false) => {
       clearTimeout(advance.current);
-      avatar.interrupt();
       setDone(true);
       onFinished();
-      avatar.speak(guideLine(projectName, skipped));
+      speakSoon(guideLine(projectName, skipped));
     },
-    [onFinished, projectName],
+    [onFinished, projectName, speakSoon],
   );
 
   const next = useCallback(() => {
@@ -110,7 +118,13 @@ export function FilmStrip({
     );
 
   // Leaving the page stops the narration: the voice follows the screen.
-  useEffect(() => () => avatar.interrupt(), []);
+  useEffect(
+    () => () => {
+      clearTimeout(speakTimer.current);
+      avatar.interrupt();
+    },
+    [],
+  );
 
   // Once the tour has started it counts as seen, so leaving and coming back
   // (maximising the advisor, say) doesn't replay it full screen. On the way
@@ -118,8 +132,7 @@ export function FilmStrip({
   useEffect(() => {
     if (!startDone) onFinished();
     else if (returnLine && !useSession.getState().busy && !useSession.getState().onboarding) {
-      avatar.interrupt();
-      avatar.speak(returnLine);
+      speakSoon(returnLine);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

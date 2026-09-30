@@ -70,7 +70,6 @@ function parentOf(path: string): string {
 }
 const PROJECT_NEXT_STEPS = [
   SHOW_PLOTS,
-  WORK_OUT_EMI,
   "What's the price range?",
   "Is it RERA registered?",
   "When is possession?",
@@ -256,7 +255,9 @@ export function JourneyShell({ children }: { children: ReactNode }) {
     ? PROJECT_NEXT_STEPS
     : bookable
       ? [BOOK_PLOT, WORK_OUT_EMI, ...agentChips.filter((c) => !/book|emi/i.test(c))].slice(0, 4)
-      : agentChips;
+      : onMap
+        ? agentChips.filter((c) => !/emi/i.test(c))
+        : agentChips;
   const lastAgent = [...turns].reverse().find((t) => t.kind === "agent");
   const running = [...turns].reverse().find((t) => t.kind === "tool" && !t.tool.pill);
   const lastShow = [...turns].reverse().find((t) => t.kind === "show");
