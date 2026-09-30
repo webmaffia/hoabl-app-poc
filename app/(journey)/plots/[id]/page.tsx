@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/store";
+import { avatar } from "@/lib/avatar/controller";
 import { entryTicket, getPlots, getProject, PROJECTS } from "@/lib/inventory";
 import { lookupKnowledge } from "@/lib/knowledge";
 import { lakh } from "@/lib/journey";
@@ -36,7 +37,7 @@ export default function ProjectDetail() {
   const [viewer, setViewer] = useState<{ images: LightboxImage[]; start: number } | null>(null);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { overrides, lastSearch, send, markIntroSeen, introSeen } = useSession();
+  const { overrides, lastSearch, requestHuman, markIntroSeen, introSeen } = useSession();
   const project = getProject(id);
   if (!project) return <p className="p-6 text-ink-soft">Project not found.</p>;
 
@@ -247,7 +248,10 @@ export default function ProjectDetail() {
       {/* Pinned to the bottom of the screen while scrolling; the avatar tile floats just above it. */}
       <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-2 bg-paper/85 px-4 py-3 backdrop-blur">
         <Button onClick={() => router.push(`/plots/${project.id}/map`)}>See the plot map</Button>
-        <Button variant="secondary" onClick={() => void send(`Tell me more about ${project.name}.`)}>
+        <Button variant="secondary" onClick={() => {
+            avatar.bargeIn();
+            void requestHuman();
+          }}>
           Ask the advisor
         </Button>
       </div>

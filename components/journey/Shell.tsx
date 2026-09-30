@@ -320,9 +320,11 @@ export function JourneyShell({ children }: { children: ReactNode }) {
                   </>
                 )}
               </div>
-              <button onClick={togglePills} className="text-[11px] text-ink-soft">
-                {showPills ? "Hide" : "Show"} what the advisor is checking
-              </button>
+              {!onProject && (
+                <button onClick={togglePills} className="text-[11px] text-ink-soft">
+                  {showPills ? "Hide" : "Show"} what the advisor is checking
+                </button>
+              )}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
